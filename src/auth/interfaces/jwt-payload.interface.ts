@@ -1,6 +1,6 @@
 
 
 export interface JwtPayload {
-  email: string;
+  id: number;
   // agrega cualquier otro campo que incluyas en tu token
 }

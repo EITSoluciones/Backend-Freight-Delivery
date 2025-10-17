@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('users')
 export class User {
@@ -9,22 +9,22 @@ export class User {
     @Column({ type: 'varchar', length: 100, unique: true })
     username: string;
 
-    @Column('text', {
+    @Column('varchar', {
         unique: true,
     })
     email: string;
 
-    @Column('text', {
+    @Column('varchar', {
         select: false
     })
     password: string;
 
-    @Column('text', {
+    @Column('varchar', {
         nullable: true
     })
     name?: string;
 
-    @Column('text', {
+    @Column('varchar', {
         nullable: true
     })
     last_name?: string;
@@ -34,16 +34,31 @@ export class User {
     })
     isActive: boolean;
 
-    @Column('text', {
-        array: true,
-        default: ['user']
-    })
-    roles: string[];
+    //Postgres
+    // @Column('text', {
+    //     array: true,
+    //     default: ['user']
+    // })
+    // roles: string[];
+
+    //MySQL
+    @Column('simple-json', { nullable: true })
+    roles: string[] | null;
 
     @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
     created_at: Date;
 
     @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
     updated_at: Date;
+
+    @BeforeInsert()
+    checkFieldsBeforeInsert() {
+        this.email = this.email.toLowerCase().trim();
+    }
+
+    @BeforeUpdate()
+    checkFieldsBeforeUpdate() {
+        this.email = this.email.toLowerCase().trim();
+    }
 
 }

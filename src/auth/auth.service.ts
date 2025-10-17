@@ -3,7 +3,7 @@ import { CreateUserDto, LoginUserDto } from './dto';
 import { log } from 'console';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
@@ -41,7 +41,6 @@ export class AuthService {
       this.handleDBErrors(error);
     }
 
-    return 'This action adds a new auth';
   }
 
   async login(loginUserDto: LoginUserDto) {
@@ -51,7 +50,7 @@ export class AuthService {
 
       const user = await this.userRepository.findOne({
         where: {username},
-        select: { username: true, password: true}
+        select: { username: true, password: true, id: true}
       });
 
       if(!user) throw new UnauthorizedException('Credentials are not valid (username)');
@@ -61,7 +60,7 @@ export class AuthService {
 
       return {
         ...user,
-        token: this.getJwtToken({email: user.email})       //Retornar el JWT
+        token: this.getJwtToken({id: user.id})       //Retornar el JWT
 
       }; 
 
@@ -76,14 +75,21 @@ export class AuthService {
 
   private handleDBErrors(error: any): never { // never -> Nunca va regresar un valor el método 
 
-    if (error.code === '23505') {
-      throw new BadRequestException(error.detail);
-    } else {
-      console.log(error)
+    // if (error.code === '23505') {
+    //   throw new BadRequestException(error.detail);
+    // } else {
+    //   console.log(error)
 
-      throw new InternalServerErrorException('Please check server logs');
+    //   throw new InternalServerErrorException('Please check server logs');
+    // }
+
+      if (error instanceof QueryFailedError) {
+    // MySQL código 1062 = duplicado
+    if ((error as any).errno === 1062) {
+      throw new BadRequestException((error as any).detail || (error as any).sqlMessage || 'Duplicate entry');
     }
-
+  }
+  throw new InternalServerErrorException('Please check server logs');
 
 
   }

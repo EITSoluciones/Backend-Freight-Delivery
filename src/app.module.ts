@@ -11,13 +11,24 @@ import { AuthModule } from './auth/auth.module';
     ConfigModule.forRoot({
       isGlobal: true, // 🔹 hace que esté disponible en toda la app
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
+    // TypeOrmModule.forRoot({
+    //   type: 'postgres',
+    //   host: 'localhost',
+    //   port: 5432,
+    //   database: 'freight-delivery',
+    //   username: 'postgres',
+    //   password: 's3cr3t777',
+    //   autoLoadEntities: true,
+    //   synchronize: true,
+    //   logging: true,
+    // }),
+        TypeOrmModule.forRoot({
+      type: 'mysql',
       host: 'localhost',
-      port: 5432,
-      database: 'freight-delivery',
-      username: 'postgres',
-      password: 's3cr3t777',
+      port: 3306,
+      database: 'freight_delivery',
+      username: 'root',
+      password: '123456',
       autoLoadEntities: true,
       synchronize: true,
       logging: true,
