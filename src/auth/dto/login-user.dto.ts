@@ -15,4 +15,8 @@ export class LoginUserDto {
     })
     password: string;
 
+    @IsString()
+    @MaxLength(100)
+    platform: string;
+
 }

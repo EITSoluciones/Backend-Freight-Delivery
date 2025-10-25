@@ -1,4 +1,5 @@
-import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Platform } from "src/platforms/entities/platform.entity";
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('users')
 export class User {
@@ -15,11 +16,6 @@ export class User {
     email: string;
 
     @Column('varchar', {
-        select: false
-    })
-    password: string;
-
-    @Column('varchar', {
         nullable: true
     })
     name?: string;
@@ -29,27 +25,32 @@ export class User {
     })
     last_name?: string;
 
+    @Column('varchar', {
+        select: false
+    })
+    password: string;
+
     @Column('bool', {
         default: true,
     })
-    isActive: boolean;
-
-    //Postgres
-    // @Column('text', {
-    //     array: true,
-    //     default: ['user']
-    // })
-    // roles: string[];
-
-    //MySQL
-    @Column('simple-json', { nullable: true })
-    roles: string[] | null;
+    is_active: boolean;
 
     @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
     created_at: Date;
 
     @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
     updated_at: Date;
+
+    @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+    deleted_at?: Date | null;
+
+    @ManyToMany(() => Platform, (platform) => platform.users)
+    @JoinTable({
+        name: 'user_platforms', 
+        joinColumn: { name: 'user_id', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'platform_id', referencedColumnName: 'id' },
+    })
+    platforms: Platform[];
 
     @BeforeInsert()
     checkFieldsBeforeInsert() {
@@ -60,5 +61,7 @@ export class User {
     checkFieldsBeforeUpdate() {
         this.email = this.email.toLowerCase().trim();
     }
+
+
 
 }

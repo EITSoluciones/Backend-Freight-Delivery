@@ -11,11 +11,7 @@ npm install
 ```
 3. Clonar archivo ```.env.example``` y renombrarlo a ```.env```
 4. Cambiar variables de entorno
-5. Levantar la base de datos.
-```
-docker-compose up -d
-```
-6. Levantar proyecto en modo desarrollo
+5. Levantar proyecto en modo desarrollo
 ```
 npm run start:dev
 ```   

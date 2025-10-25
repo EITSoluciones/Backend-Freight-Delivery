@@ -7,22 +7,23 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { Platform } from 'src/platforms/entities/platform.entity';
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User]), //ORM para utilizar PostgreSQL
+    TypeOrmModule.forFeature([User, Platform]), //ORM para utilizar PostgreSQL
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (ConfigService : ConfigService) => {
+      useFactory: () => {
         return {
-          secret: ConfigService.get('JWT_SECRET'),
+          secret: process.env.JWT_SECRET,
           signOptions: {
-            expiresIn: '2h'
+            expiresIn: process.env.JWT_EXPIRATION
           }
         }
       }
