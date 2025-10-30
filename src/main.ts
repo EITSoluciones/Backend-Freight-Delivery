@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -31,7 +32,16 @@ async function bootstrap() {
       whitelist: true,              //Solo deja la data del DTO, remueve objetos basura
       forbidNonWhitelisted: true,   //Indica las propiedades que no debe mandar, que no estan el DTO, devuelve un 400
     })
-  )
+  );
+
+  const config = new DocumentBuilder()
+    .setTitle('Freight Delivery - API REST')
+    .setDescription('Endpoints')
+    .setVersion('1.0')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, documentFactory);
+
 
   await app.listen(process.env.APP_PORT ?? 3000);
 

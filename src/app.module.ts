@@ -6,6 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductsModule } from './products/products.module';
 import { AuthModule } from './auth/auth.module';
 import { PlatformsModule } from './platforms/platforms.module';
+import { RolesModule } from './roles/roles.module';
+import { UsersModule } from './users/users.module';
+
 
 @Module({
   imports: [
@@ -23,7 +26,7 @@ import { PlatformsModule } from './platforms/platforms.module';
     //   autoLoadEntities: true,
     //   synchronize: true,
     //   logging: true,
-    // }),
+    // })
 
     //Conexión Base de Datos
     TypeOrmModule.forRoot({
@@ -38,9 +41,11 @@ import { PlatformsModule } from './platforms/platforms.module';
       logging: process.env.DB_LOGGING === 'true',           //Muestra en consola las consultas que ejecuta TypeORM. NO RECOMENDADO EN PRODUCCIÓN 
     }),
 
-    ProductsModule, AuthModule, PlatformsModule
+    ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule
   ],
   controllers: [AppController],
   providers: [AppService],
+  
 })
+
 export class AppModule { }

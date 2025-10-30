@@ -33,5 +33,9 @@ export class CreateUserDto {
     @IsString({ each: true })
     platforms: string[];
 
+    @ArrayNotEmpty()
+    @ArrayUnique()
+    @IsString({ each: true })
+    roles: string[];
 
 }

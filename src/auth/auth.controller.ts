@@ -1,10 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, UseGuards, Req, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, UseGuards, Req, Headers, SetMetadata } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateUserDto, LoginUserDto } from './dto';
+import { LoginUserDto } from './dto';
 import { AuthGuard } from '@nestjs/passport';
-import { User } from './entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { RawHeaders, GetUser } from './decorators';
 import type { IncomingHttpHeaders } from 'http';
+import { UserRoleGuard } from './guards/user-role/user-role.guard';
+import { RoleProtected } from './decorators/role-protected.decorator';
+import { Permissions, ValidRoles } from './interfaces';
+import { Auth } from './decorators/auth.decorator';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 
 @Controller({
@@ -14,11 +19,6 @@ import type { IncomingHttpHeaders } from 'http';
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
-  @Post('register')
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.authService.create(createUserDto);
-  }
-
   @Post('login')
   @HttpCode(200)
   loginUser(@Body() loginUserDto: LoginUserDto) {
@@ -26,7 +26,7 @@ export class AuthController {
   }
 
   @Get('private')
-  @UseGuards(AuthGuard())
+  // @UseGuards(AuthGuard())
   testingPrivateRoute(
     @Req() request: Express.Request,
     @GetUser() user: User,
@@ -44,6 +44,17 @@ export class AuthController {
       headers
     }
 
+  }
+
+  @Get('test')
+  @Auth(Permissions.Test)
+  privateRoute2(
+    @GetUser() user: User,
+  ) {
+    return {
+      ok: true,
+      user
+    }
   }
 
 
