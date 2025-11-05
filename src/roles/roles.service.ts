@@ -10,14 +10,19 @@ export class RolesService {
   constructor(
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
-  ) {}
+  ) { }
 
   create(createRoleDto: CreateRoleDto) {
     return 'This action adds a new role';
   }
 
   async findAll() {
-    return this.roleRepository.find({ where: { is_active: true } });
+    const roles = await this.roleRepository.find({ where: { is_active: true } });
+    return {
+      success: true,
+      message: "Roles obtenidos exitosamente!",
+      data: roles,
+    };
   }
 
   findOne(id: number) {

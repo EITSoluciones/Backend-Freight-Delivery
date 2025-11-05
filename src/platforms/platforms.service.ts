@@ -10,14 +10,19 @@ export class PlatformsService {
   constructor(
     @InjectRepository(Platform)
     private readonly platformRepository: Repository<Platform>,
-  ) {}
+  ) { }
 
   create(createPlatformDto: CreatePlatformDto) {
     return 'This action adds a new platform';
   }
 
   async findAll() {
-    return this.platformRepository.find({ where: { is_active: true } });
+    const platforms = await this.platformRepository.find({ where: { is_active: true } });
+    return {
+      success: true,
+      message: "Plataformas obtenidos exitosamente!",
+      data: platforms,
+    };
   }
 
   findOne(id: number) {

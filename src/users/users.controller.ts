@@ -16,25 +16,25 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  // @Auth(Permissions.UsersCreate)
+  @Auth(Permissions.UsersCreate)
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
   @Get()
-  // @Auth(Permissions.UsersView)
+  @Auth(Permissions.UsersView)
   findAll(@Query() paginationDto: PaginationDto) {
     return this.usersService.findAll(paginationDto);
   }
 
   @Get(':uuid')
-  // @Auth(Permissions.UsersView)
+  @Auth(Permissions.UsersView)
   findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return this.usersService.findOne(uuid);
   }
 
   @Patch(':uuid')
-  // @Auth(Permissions.UsersUpdate)
+  @Auth(Permissions.UsersUpdate)
   update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateUserDto: UpdateUserDto
@@ -43,7 +43,7 @@ export class UsersController {
   }
 
   @Delete(':uuid')
-  // @Auth(Permissions.UsersDelete)
+  @Auth(Permissions.UsersDelete)
   remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return this.usersService.remove(uuid);
   }
