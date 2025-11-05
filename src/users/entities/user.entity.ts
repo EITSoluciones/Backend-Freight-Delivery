@@ -21,12 +21,12 @@ export class User {
     email: string;
 
     @Column('varchar', {
-        nullable: true
+        length: 100, nullable: true
     })
     name?: string;
 
     @Column('varchar', {
-        nullable: true
+        length: 100, nullable: true
     })
     last_name?: string;
 
@@ -68,16 +68,18 @@ export class User {
     @BeforeInsert()
     checkFieldsBeforeInsert() {
         this.email = this.email.toLowerCase().trim();
+        this.username = this.username.toLowerCase().trim();
     }
 
     @BeforeUpdate()
     checkFieldsBeforeUpdate() {
         this.email = this.email.toLowerCase().trim();
+        this.username = this.username.toLowerCase().trim();
     }
 
     @BeforeInsert()
     generateUuid() {
-        this.uuid = uuidv4(); 
+        this.uuid = uuidv4();
     }
 
 }

@@ -10,8 +10,9 @@ import { RoleProtected } from './decorators/role-protected.decorator';
 import { Permissions, ValidRoles } from './interfaces';
 import { Auth } from './decorators/auth.decorator';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { ApiTags } from '@nestjs/swagger';
 
-
+@ApiTags('Autentificación')
 @Controller({
   path: 'auth',
   version: '1',

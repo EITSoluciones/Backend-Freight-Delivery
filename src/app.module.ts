@@ -16,18 +16,6 @@ import { UsersModule } from './users/users.module';
       isGlobal: true, //Hace que esté disponible en toda la app
     }),
 
-    // TypeOrmModule.forRoot({
-    //   type: 'postgres',
-    //   host: 'localhost',
-    //   port: 5432,
-    //   database: 'freight-delivery',
-    //   username: 'postgres',
-    //   password: 's3cr3t777',
-    //   autoLoadEntities: true,
-    //   synchronize: true,
-    //   logging: true,
-    // })
-
     //Conexión Base de Datos
     TypeOrmModule.forRoot({
       type: process.env.DB_TYPE as any,

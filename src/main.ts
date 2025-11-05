@@ -31,6 +31,10 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,              //Solo deja la data del DTO, remueve objetos basura
       forbidNonWhitelisted: true,   //Indica las propiedades que no debe mandar, que no estan el DTO, devuelve un 400
+      transform: true,              //Activa transformación de tipos
+      transformOptions:{
+        enableImplicitConversion: true  //Activa conversión automática 
+      }
     })
   );
 

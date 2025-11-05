@@ -1,29 +1,27 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, QueryFailedError, Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-
 import { User } from './entities/user.entity';
 import { Platform } from 'src/platforms/entities/platform.entity';
 import { Role } from 'src/roles/entities/role.entity';
-
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
 
-    constructor(
-      @InjectRepository(User)
-      private readonly userRepository: Repository<User>,
-      @InjectRepository(Platform)
-      private readonly platformRepository: Repository<Platform>,
-      @InjectRepository(Role)
-      private readonly roleRepository: Repository<Role>
-    ) {}
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Platform)
+    private readonly platformRepository: Repository<Platform>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>
+  ) { }
 
-
+  /** Crear Usuario */
   async create(createUserDto: CreateUserDto) {
     try {
       const { password, platforms, roles, ...userData } = createUserDto;
@@ -40,15 +38,23 @@ export class UsersService {
 
       const savedUser = await this.userRepository.save(user);
       const { password: _, ...userWithoutPassword } = savedUser;
-      return userWithoutPassword;
+
+      return {
+        success: true,
+        message: "Usuario Creado Exitosamente!",
+        data: userWithoutPassword,
+      };
 
     } catch (error) {
       this.handleDBErrors(error);
     }
   }
 
+  /** Obtener Usuarios */
   async findAll(paginationDto: PaginationDto) {
-    const { limit = 10, offset = 0 } = paginationDto;
+
+    const { limit = 10, page = 1 } = paginationDto;
+    const offset = (page - 1) * limit; //conversión a offset
 
     const [users, total] = await this.userRepository.findAndCount({
       take: limit,
@@ -62,61 +68,103 @@ export class UsersService {
     });
 
     return {
+      success: true,
+      message: "Usuarios obtenidos exitosamente!",
       data: usersWithoutPassword,
-      total,
-      limit,
-      offset
+      pagination: {
+        pageNumber: page,
+        totalPages: limit,
+        totalCount: total,
+        hasPreviousPage: (page > 1),
+        hasNextPage: (total > (page * limit)), //Validar formula
+      }
     };
+
   }
 
+  /** Buscar Usuario */
   async findOne(uuid: string) {
+
     const user = await this.userRepository.findOne({
       where: { uuid },
       relations: ['platforms', 'roles']
     });
 
     if (!user) {
-      throw new NotFoundException(`User with uuid ${uuid} not found`);
+      throw new NotFoundException(`El usuario con uuid ${uuid} no se encontró!`);
     }
 
     const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+
+    return {
+      success: true,
+      message: "Usuario Encontrado!",
+      data: userWithoutPassword,
+    };
+
   }
 
-  async update(uuid: string, updateUserDto: UpdateUserDto) {
+  /** Actualizar Parcialmente Usuario */
+  async partialUpdate(uuid: string, updateUserDto: UpdateUserDto) {
+
     const { platforms, roles, ...userDataToUpdate } = updateUserDto;
 
-    const user = await this.userRepository.preload({
-        uuid: uuid,
-        ...userDataToUpdate,
+    const userToUpdate = await this.userRepository.findOne({
+      where: { uuid },
+      relations: ['platforms', 'roles'],
     });
 
-    if (!user) throw new NotFoundException(`User with uuid: ${uuid} not found`);
+    if (!userToUpdate) throw new NotFoundException(`Usuario con uuid: ${uuid} no encontrado`);
 
     try {
+      // Solo actualiza campos enviados
+      Object.assign(userToUpdate, userDataToUpdate);
+
+      // Actualiza plataformas si se enviaron
       if (platforms) {
         const platformsEntities = await this.findPlatformsByCode(platforms);
-        user.platforms = platformsEntities;
+        userToUpdate.platforms = platformsEntities;
       }
 
+      // Actualiza roles si se enviaron
       if (roles) {
         const rolesEntities = await this.findRolesByCode(roles);
-        user.roles = rolesEntities;
+        userToUpdate.roles = rolesEntities;
       }
 
-      const updatedUser = await this.userRepository.save(user);
-      const { password, ...userWithoutPassword } = updatedUser;
-      return userWithoutPassword;
+      const updatedUser = await this.userRepository.save(userToUpdate);
+      const { password: _, ...userWithoutPassword } = updatedUser;
+
+      return {
+        success: true,
+        message: "Usuario actualizado exitosamente!",
+        data: userWithoutPassword,
+      };
 
     } catch (error) {
       this.handleDBErrors(error);
     }
   }
 
+  /** Eliminar Usuario */
   async remove(uuid: string) {
-    const user = await this.findOne(uuid); // Re-uses findOne to ensure user exists
+
+    const user = await this.userRepository.findOne({
+      where: { uuid }
+    });
+
+    if (!user) {
+      throw new NotFoundException(`El usuario con uuid ${uuid} no se encontró!`);
+    }
+
     await this.userRepository.softDelete({ uuid });
-    return { message: `User with uuid ${uuid} has been successfully deleted.` };
+
+    return {
+      success: true,
+      message: "Usuario eliminado exitosamente!",
+      data: user,
+    };
+
   }
 
   async findPlatformsByCode(codes: string[]): Promise<Platform[]> {
@@ -142,11 +190,11 @@ export class UsersService {
 
     if (error instanceof QueryFailedError) {
       if ((error as any).errno === 1062) {
-        throw new BadRequestException((error as any).detail || (error as any).sqlMessage || 'Duplicate entry');
+        throw new BadRequestException((error as any).detail || (error as any).sqlMessage || 'Registro Duplicado');
       }
     }
 
     console.error(error);
-    throw new InternalServerErrorException('Please check server logs');
+    throw new InternalServerErrorException('Error del Servidor. Porfavor contacte al administrador del sistema!');
   }
 }
