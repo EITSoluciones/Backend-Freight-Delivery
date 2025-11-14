@@ -34,6 +34,8 @@ import {
 import {
   AddressesModule
 } from './addresses/addresses.module';
+import { ModuleCategoriesModule } from './module-categories/module-categories.module';
+import { ModulesModule } from './modules/modules.module';
 
 
 @Module({
@@ -55,7 +57,7 @@ import {
       logging: process.env.DB_LOGGING === 'true', //Muestra en consola las consultas que ejecuta TypeORM. NO RECOMENDADO EN PRODUCCIÓN
     }),
 
-    ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule, ClientsModule, AddressesModule
+    ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule, ClientsModule, AddressesModule, ModuleCategoriesModule, ModulesModule
   ],
   controllers: [AppController],
   providers: [AppService],
