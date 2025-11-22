@@ -1,3 +1,4 @@
+import { Exclude } from "class-transformer";
 import { Platform } from "src/platforms/entities/platform.entity";
 import { Role } from "src/roles/entities/role.entity";
 import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
@@ -6,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 @Entity('users')
 export class User {
 
+    @Exclude()
     @PrimaryGeneratedColumn('increment')
     id: number;            // ID auto-incremental
 
@@ -30,6 +32,7 @@ export class User {
     })
     last_name?: string;
 
+    @Exclude()
     @Column('varchar', {
         select: false
     })

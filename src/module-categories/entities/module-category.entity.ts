@@ -1,9 +1,11 @@
+import { Exclude } from "class-transformer";
 import { BeforeInsert, Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { v4 as uuidv4 } from 'uuid';
 
 @Entity('module_categories')
 export class ModuleCategory {
 
+    @Exclude()
     @PrimaryGeneratedColumn('increment')
     id: number;
 

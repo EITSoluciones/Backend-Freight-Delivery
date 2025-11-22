@@ -1,16 +1,20 @@
-import { BeforeInsert, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { v4 as uuidv4 } from 'uuid';
 import { ModuleCategory } from "src/module-categories/entities/module-category.entity";
+import { Permission } from "src/roles/entities/permission.entity";
+import { Exclude } from "class-transformer";
 
 @Entity('modules')
 export class Module {
 
+    @Exclude()
     @PrimaryGeneratedColumn('increment')
     id: number;
 
     @Column({ type: 'uuid', unique: true })
     uuid: string;
 
+    @Exclude()
     @Column({ type: 'int', name: 'module_category_id' })
     module_category_id: number;
 
@@ -41,6 +45,9 @@ export class Module {
     @ManyToOne(() => ModuleCategory)
     @JoinColumn({ name: 'module_category_id' })
     moduleCategory: ModuleCategory;
+
+    @OneToMany(() => Permission, (permission) => permission.module)
+    permissions: Permission[];
 
     @BeforeInsert()
     generateUuid() {

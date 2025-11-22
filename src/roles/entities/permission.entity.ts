@@ -1,13 +1,20 @@
-import { Column, CreateDateColumn, Entity, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Role } from "./role.entity";
+import { Module } from "src/modules/entities/module.entity";
+import { Exclude } from "class-transformer";
+
 
 @Entity('permissions')
 export class Permission {
 
+    @Exclude()
     @PrimaryGeneratedColumn('increment')
     id: number;
 
-    @Column({ length: 50 })
+    @Column({ type: 'int', name: 'module_id' })
+    module_id: number;
+
+    @Column({ length: 50, unique: true })
     code: string;
 
     @Column({ length: 100 })
@@ -27,5 +34,9 @@ export class Permission {
 
     @ManyToMany(() => Role, (role) => role.permissions)
     roles: Role[];
+
+    @ManyToOne(() => Module, (module) => module.permissions)
+    @JoinColumn({ name: 'module_id' })
+    module: Module;
 
 }

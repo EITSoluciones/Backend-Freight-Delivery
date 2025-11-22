@@ -1,13 +1,15 @@
+import { Exclude } from "class-transformer";
 import { User } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('platforms')
 export class Platform {
 
+  @Exclude()
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ length: 50 })
+  @Column({ length: 50, unique:true })
   code: string;
 
   @Column({ length: 100 })

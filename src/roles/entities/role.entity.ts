@@ -1,14 +1,16 @@
 import { User } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Permission } from "./permission.entity";
+import { Exclude } from "class-transformer";
 
 @Entity('roles')
 export class Role {
 
+    @Exclude()
     @PrimaryGeneratedColumn('increment')
     id: number;
 
-    @Column({ length: 50 })
+    @Column({ length: 50, unique:true })
     code: string;
 
     @Column({ length: 100 })

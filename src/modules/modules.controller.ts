@@ -1,9 +1,10 @@
-import { Controller, Get, Body, Patch, Param, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Body, Patch, Param, Query, ParseUUIDPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { ModulesService } from './modules.service';
 import { UpdateModuleDto } from './dto/update-module.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ApiTags } from '@nestjs/swagger';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @ApiTags('Modules')
 @Controller({
   path: 'modules',

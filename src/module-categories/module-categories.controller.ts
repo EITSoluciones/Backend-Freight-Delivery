@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { ModuleCategoriesService } from './module-categories.service';
 import { CreateModuleCategoryDto } from './dto/create-module-category.dto';
 import { UpdateModuleCategoryDto } from './dto/update-module-category.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ApiTags } from '@nestjs/swagger';
 
+
+@UseInterceptors(ClassSerializerInterceptor)
 @ApiTags('Module Categories')
 @Controller({
   path: 'module-categories',

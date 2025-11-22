@@ -58,7 +58,7 @@ export class ClientsController {
     return this.clientsService.findOne(uuid);
   }
 
-  @Put(':uuid')
+  @Patch(':uuid')
   update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateClientDto: UpdateClientDto,

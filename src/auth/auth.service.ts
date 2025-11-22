@@ -35,6 +35,7 @@ export class AuthService {
       where: { username },
       select: {
         id: true,
+        uuid: true,
         username: true,
         name: true,
         last_name: true,
@@ -43,6 +44,7 @@ export class AuthService {
       },
       relations: ['platforms', 'roles'],
     });
+   
 
     if (!user) throw new UnauthorizedException('Credenciales inválidas.');
 
@@ -58,9 +60,9 @@ export class AuthService {
     if (!isPasswordValid) throw new UnauthorizedException('Credenciales inválidas.');
 
     // Generar JWT token
-    const accessToken = this.getJwtToken({ id: user.id });
+    const accessToken = this.getJwtToken({ uuid: user.uuid });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, id: __, ...userWithoutPassword } = user;
 
     // Retornar respuesta estructurada
     return {

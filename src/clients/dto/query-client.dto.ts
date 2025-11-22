@@ -16,7 +16,7 @@ export class QueryClientDto extends PaginationDto {
   @Transform(({
     value
   }) => value === 'true' || value === true)
-  is_active ? : boolean;
+    declare is_active?: boolean;
 
   @IsOptional()
   @IsDateString()

@@ -27,17 +27,17 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     async validate(payload: JwtPayload): Promise<User> {
         console.log('🔥 Entró a JwtStrategy.validate');
-        const { id } = payload;
+        const { uuid } = payload;
         const user = await this.userRepository.findOne({
-            where: { id },
+            where: { uuid },
             relations: ['roles', 'roles.permissions'],
         });
 
         if (!user) {
-            throw new UnauthorizedException('Token not valid');
+            throw new UnauthorizedException('Token ni válido!');
         }
 
-        if (!user.is_active) throw new UnauthorizedException('User is inactive, talk with an admin');
+        if (!user.is_active) throw new UnauthorizedException('Usuario es inactivo, comunicarse con Administrador!');
 
         return user;
 

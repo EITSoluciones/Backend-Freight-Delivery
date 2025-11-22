@@ -37,12 +37,11 @@ export class UsersService {
       });
 
       const savedUser = await this.userRepository.save(user);
-      const { password: _, ...userWithoutPassword } = savedUser;
 
       return {
         success: true,
         message: "Usuario Creado Exitosamente!",
-        data: userWithoutPassword,
+        data: savedUser,
       };
 
     } catch (error) {
@@ -62,15 +61,15 @@ export class UsersService {
       relations: ['platforms', 'roles'],
     });
 
-    const usersWithoutPassword = users.map(user => {
-      const { password, ...userWithoutPassword } = user;
-      return userWithoutPassword;
-    });
+    // const usersWithoutPassword = users.map(user => {
+    //   const { password, ...userWithoutPassword } = user;
+    //   return userWithoutPassword;
+    // });
 
     return {
       success: true,
       message: "Usuarios obtenidos exitosamente!",
-      data: usersWithoutPassword,
+      data: users,
       pagination: {
         pageNumber: page,
         totalPages: limit,
@@ -94,12 +93,10 @@ export class UsersService {
       throw new NotFoundException(`El usuario con uuid ${uuid} no se encontró!`);
     }
 
-    const { password, ...userWithoutPassword } = user;
-
     return {
       success: true,
       message: "Usuario Encontrado!",
-      data: userWithoutPassword,
+      data: user,
     };
 
   }
@@ -133,12 +130,11 @@ export class UsersService {
       }
 
       const updatedUser = await this.userRepository.save(userToUpdate);
-      const { password: _, ...userWithoutPassword } = updatedUser;
 
       return {
         success: true,
         message: "Usuario actualizado exitosamente!",
-        data: userWithoutPassword,
+        data: updatedUser,
       };
 
     } catch (error) {
