@@ -6,21 +6,41 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 import { Role } from './entities/role.entity';
 import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { Permission } from './entities/permission.entity';
 
 @Injectable()
 export class RolesService {
   constructor(
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
-    private readonly dbErrorHandler: DBErrorHandlerService,
+
+    @InjectRepository(Permission)
+    private readonly permissionRepository: Repository<Permission>,
+    
+    private readonly dbErrorHandler: DBErrorHandlerService
+
   ) { }
 
   /** Obtener Catálogo de Roles */
-  async getCatalog() {
+  async getRolesCatalog() {
     const roles = await this.roleRepository.find({ where: { is_active: true } });
     return {
       message: "Roles obtenidos exitosamente!",
       data: roles,
+    };
+  }
+
+  /** Obtener Catálogo de Permisos */
+  async getPermissionsCatalog() {
+   
+    const permissions = await this.permissionRepository.find({ 
+      where: { is_active: true },
+      relations: ['module']
+    });
+
+    return {
+      message: "Permisos obtenidos exitosamente!",
+      data: permissions,
     };
   }
 
@@ -114,11 +134,11 @@ export class RolesService {
   /** Eliminar Role */
   async remove(uuid: string) {
 
-     //buscar por uuid
+    //buscar por uuid
     const role = await this.roleRepository.findOne({ where: { uuid } });
 
     if (!role) throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
-    
+
     await this.roleRepository.softDelete({ uuid });
 
     return {

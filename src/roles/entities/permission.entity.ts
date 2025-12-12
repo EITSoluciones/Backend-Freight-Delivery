@@ -1,8 +1,8 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Role } from "./role.entity";
 import { Module } from "src/modules/entities/module.entity";
 import { Exclude } from "class-transformer";
-
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity('permissions')
 export class Permission {
@@ -11,8 +11,8 @@ export class Permission {
     @PrimaryGeneratedColumn('increment')
     id: number;
 
-    @Column({ type: 'int', name: 'module_id' })
-    module_id: number;
+    @Column({ type: 'uuid', unique: true })
+    uuid: string;
 
     @Column({ length: 50, unique: true })
     code: string;
@@ -26,11 +26,27 @@ export class Permission {
     @Column({ default: true })
     is_active: boolean;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({
+        type: 'timestamp',
+        precision: 6, //indica que el timestamp guardará 6 dígitos de fracción de segundo (microsegundos).
+        name: 'created_at',
+    })
     created_at: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumn({
+        type: 'timestamp',
+        precision: 6,
+        name: 'updated_at',
+    })
     updated_at: Date;
+
+    @DeleteDateColumn({
+        type: 'timestamp',
+        precision: 6,
+        name: 'deleted_at',
+        nullable: true,
+    })
+    deleted_at?: Date | null;
 
     @ManyToMany(() => Role, (role) => role.permissions)
     roles: Role[];
@@ -39,4 +55,8 @@ export class Permission {
     @JoinColumn({ name: 'module_id' })
     module: Module;
 
+    @BeforeInsert()
+    generateUuid() {
+        this.uuid = uuidv4();
+    }
 }

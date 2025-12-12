@@ -17,8 +17,15 @@ export class RolesController {
   /** Obtener Catálogo de Roles */
   @Get('catalog')
   @Auth()
-  getCatalog() {
-    return this.rolesService.getCatalog();
+  getRolesCatalog() {
+    return this.rolesService.getRolesCatalog();
+  }
+
+  /** Obtener Catálogo de Permisos */
+  @Get('permissions')
+  @Auth()
+  getPermissionsCatalog() {
+    return this.rolesService.getPermissionsCatalog();
   }
 
   /** Crear Rol */
@@ -58,5 +65,7 @@ export class RolesController {
   remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return this.rolesService.remove(uuid);
   }
+
+
 
 }
