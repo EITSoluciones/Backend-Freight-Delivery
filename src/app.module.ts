@@ -1,41 +1,18 @@
-import {
-  Module
-} from '@nestjs/common';
-import {
-  AppController
-} from './app.controller';
-import {
-  AppService
-} from './app.service';
-import {
-  ConfigModule
-} from '@nestjs/config';
-import {
-  TypeOrmModule
-} from '@nestjs/typeorm';
-import {
-  ProductsModule
-} from './products/products.module';
-import {
-  AuthModule
-} from './auth/auth.module';
-import {
-  PlatformsModule
-} from './platforms/platforms.module';
-import {
-  RolesModule
-} from './roles/roles.module';
-import {
-  UsersModule
-} from './users/users.module';
-import {
-  ClientsModule
-} from './clients/clients.module';
-import {
-  AddressesModule
-} from './addresses/addresses.module';
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProductsModule } from './products/products.module';
+import { AuthModule } from './auth/auth.module';
+import { PlatformsModule } from './platforms/platforms.module';
+import { RolesModule } from './roles/roles.module';
+import { UsersModule } from './users/users.module';
+import { ClientsModule } from './clients/clients.module';
+import { AddressesModule } from './addresses/addresses.module';
 import { ModuleCategoriesModule } from './module-categories/module-categories.module';
 import { ModulesModule } from './modules/modules.module';
+import { CommonModule } from './common/common.module';
 
 
 @Module({
@@ -57,7 +34,7 @@ import { ModulesModule } from './modules/modules.module';
       logging: process.env.DB_LOGGING === 'true', //Muestra en consola las consultas que ejecuta TypeORM. NO RECOMENDADO EN PRODUCCIÓN
     }),
 
-    ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule, ClientsModule, AddressesModule, ModuleCategoriesModule, ModulesModule
+    CommonModule, ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule, ClientsModule, AddressesModule, ModuleCategoriesModule, ModulesModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -12,22 +12,35 @@ export class ModuleCategory {
     @Column({ type: 'uuid', unique: true })
     uuid: string;
 
-    @Column({ type: 'text' })
+    @Column({ length: 100 })
     name: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ nullable: true })
     description: string;
 
-    @Column('bool', { default: true })
+    @Column({ default: true })
     is_active: boolean;
 
-    @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
+    @CreateDateColumn({
+        type: 'timestamp',
+        precision: 6,
+        name: 'created_at',
+    })
     created_at: Date;
 
-    @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
+    @UpdateDateColumn({
+        type: 'timestamp',
+        precision: 6,
+        name: 'updated_at',
+    })
     updated_at: Date;
 
-    @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+    @DeleteDateColumn({
+        type: 'timestamp',
+        precision: 6,
+        name: 'deleted_at',
+        nullable: true,
+    })
     deleted_at?: Date | null;
 
     @BeforeInsert()

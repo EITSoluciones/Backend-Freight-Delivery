@@ -1,39 +1,129 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { Role } from './entities/role.entity';
+import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class RolesService {
   constructor(
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
+    private readonly dbErrorHandler: DBErrorHandlerService,
   ) { }
 
-  create(createRoleDto: CreateRoleDto) {
-    return 'This action adds a new role';
-  }
-
-  async findAll() {
+  /** Obtener Catálogo de Roles */
+  async getCatalog() {
     const roles = await this.roleRepository.find({ where: { is_active: true } });
     return {
-      success: true,
       message: "Roles obtenidos exitosamente!",
       data: roles,
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} role`;
+  /** Crear Rol */
+  async create(createRoleDto: CreateRoleDto) {
+    try {
+
+      const roleCategory = this.roleRepository.create(createRoleDto);
+      const savedRole = await this.roleRepository.save(roleCategory);
+
+      return {
+        message: "Rol Creado Exitosamente!",
+        data: savedRole,
+      };
+
+    } catch (error) {
+      this.dbErrorHandler.handleDBErrors(error);
+    }
+
   }
 
-  update(id: number, updateRoleDto: UpdateRoleDto) {
-    return `This action updates a #${id} role`;
+  /** Obtener Roles */
+  async findAll(paginationDto: PaginationDto) {
+    const { limit = 10, page = 1, is_active } = paginationDto;
+    const offset = (page - 1) * limit;
+
+    const bool = is_active === "true"; // TODO: PENDIENTE VALIDAR (El dto Paginación lo obtiene como string )
+
+    const where = {
+      ...(bool !== undefined && { is_active: bool }),
+    };
+
+    const [Roles, total] = await this.roleRepository.findAndCount({
+      where,
+      take: limit,
+      skip: offset,
+    });
+
+    return {
+      message: "Roles obtenidos exitosamente!",
+      data: Roles,
+      pagination: {
+        pageNumber: page,
+        totalPages: Math.ceil(total / limit),
+        totalCount: total,
+        hasPreviousPage: (page > 1),
+        hasNextPage: (total > (page * limit)),
+      }
+    };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} role`;
+  /** Obtener Rol */
+  async findOne(uuid: string) {
+
+    //buscar por uuid
+    const role = await this.roleRepository.findOne({ where: { uuid } });
+
+    if (!role) {
+      throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
+    }
+
+    return {
+      message: "Rol encontrado exitosamente!",
+      data: role,
+    };
+
+  }
+
+  /** Actualizar Rol */
+  async update(uuid: string, updateRoleDto: UpdateRoleDto) {
+
+    //buscar por uuid
+    const roleToUpdate = await this.roleRepository.findOne({ where: { uuid } });
+
+    if (!roleToUpdate) throw new NotFoundException(`Rol con uuid: ${uuid} no encontrada`);
+
+    try {
+      Object.assign(roleToUpdate, updateRoleDto);
+      const updatedRole = await this.roleRepository.save(roleToUpdate);
+
+      return {
+        message: "Rol actualizado exitosamente!",
+        data: updatedRole,
+      };
+
+    } catch (error) {
+      this.dbErrorHandler.handleDBErrors(error);
+    }
+  }
+
+  /** Eliminar Role */
+  async remove(uuid: string) {
+
+     //buscar por uuid
+    const role = await this.roleRepository.findOne({ where: { uuid } });
+
+    if (!role) throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
+    
+    await this.roleRepository.softDelete({ uuid });
+
+    return {
+      message: "Rol eliminado exitosamente!",
+      data: role,
+    };
   }
 }

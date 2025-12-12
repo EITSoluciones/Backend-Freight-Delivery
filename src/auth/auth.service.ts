@@ -44,7 +44,7 @@ export class AuthService {
       },
       relations: ['platforms', 'roles'],
     });
-   
+
 
     if (!user) throw new UnauthorizedException('Credenciales inválidas.');
 
@@ -66,15 +66,17 @@ export class AuthService {
 
     // Retornar respuesta estructurada
     return {
-      accessToken,
-      tokenType: 'Bearer',
-      expiresIn: process.env.JWT_EXPIRATION,
-      user: {
-        ...userWithoutPassword,
-        platforms: user.platforms.map(p => p.code),
-      },
+      message: "Login de Usuario exitoso!",
+      data: {
+        accessToken,
+        tokenType: 'Bearer',
+        expiresIn: process.env.JWT_EXPIRATION,
+        user: {
+          ...userWithoutPassword,
+          platforms: user.platforms.map(p => p.code),
+        },
+      }
     };
-
 
   }
 

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,11 +33,14 @@ async function bootstrap() {
       whitelist: true,              //Solo deja la data del DTO, remueve objetos basura
       forbidNonWhitelisted: true,   //Indica las propiedades que no debe mandar, que no estan el DTO, devuelve un 400
       transform: true,              //Activa transformación de tipos
-      transformOptions:{
+      transformOptions: {
         enableImplicitConversion: true  //Activa conversión automática 
       }
     })
   );
+
+  // Registrar interceptor global
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
   const config = new DocumentBuilder()
     .setTitle('Freight Delivery - API REST')

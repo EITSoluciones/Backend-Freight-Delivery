@@ -76,9 +76,9 @@ export class ClientsService {
 
     const where: FindManyOptions < Client > ['where'] = {};
 
-    if (is_active !== undefined) {
-      where.is_active = is_active;
-    }
+    // if (is_active !== undefined) {
+    //   where.is_active = is_active;
+    // }
 
     if (startDate && endDate) {
       where.created_at = Between(new Date(startDate), new Date(endDate));

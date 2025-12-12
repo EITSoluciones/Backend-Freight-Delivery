@@ -11,18 +11,15 @@ import {
 } from 'class-transformer';
 
 export class QueryClientDto extends PaginationDto {
+
   @IsOptional()
-  @IsBoolean()
-  @Transform(({
-    value
-  }) => value === 'true' || value === true)
-    declare is_active?: boolean;
+  declare is_active?: string;
 
   @IsOptional()
   @IsDateString()
-  startDate ? : string;
+  startDate?: string;
 
   @IsOptional()
   @IsDateString()
-  endDate ? : string;
+  endDate?: string;
 }

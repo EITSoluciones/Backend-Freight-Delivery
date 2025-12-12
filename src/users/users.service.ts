@@ -24,6 +24,7 @@ export class UsersService {
   /** Crear Usuario */
   async create(createUserDto: CreateUserDto) {
     try {
+      
       const { password, platforms, roles, ...userData } = createUserDto;
 
       const platformsIds = await this.findPlatformsByCode(platforms);

@@ -5,39 +5,46 @@ import { ModuleCategory } from './entities/module-category.entity';
 import { CreateModuleCategoryDto } from './dto/create-module-category.dto';
 import { UpdateModuleCategoryDto } from './dto/update-module-category.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
 
 @Injectable()
 export class ModuleCategoriesService {
 
+  //inyecciones 
   constructor(
     @InjectRepository(ModuleCategory)
     private readonly moduleCategoryRepository: Repository<ModuleCategory>,
+    private readonly dbErrorHandler: DBErrorHandlerService,
   ) { }
 
+  /** Crear Categoría */
   async create(createModuleCategoryDto: CreateModuleCategoryDto) {
     try {
+
       const moduleCategory = this.moduleCategoryRepository.create(createModuleCategoryDto);
       const savedModuleCategory = await this.moduleCategoryRepository.save(moduleCategory);
 
       return {
-        success: true,
         message: "Categoría de Módulo Creada Exitosamente!",
         data: savedModuleCategory,
       };
 
     } catch (error) {
-      this.handleDBErrors(error);
+      this.dbErrorHandler.handleDBErrors(error);
     }
+
   }
 
+  /** Obtener Categorías */
   async findAll(paginationDto: PaginationDto) {
     const { limit = 10, page = 1, is_active } = paginationDto;
     const offset = (page - 1) * limit;
 
-    const where: any = {};
-    if (is_active !== undefined) {
-      where.is_active = is_active;
-    }
+    const bool = is_active === "true"; // TODO: PENDIENTE VALIDAR (El dto lo obtiene como string)
+
+    const where = {
+      ...(bool !== undefined && { is_active: bool }),
+    };
 
     const [moduleCategories, total] = await this.moduleCategoryRepository.findAndCount({
       where,
@@ -46,7 +53,6 @@ export class ModuleCategoriesService {
     });
 
     return {
-      success: true,
       message: "Categorías de Módulos obtenidas exitosamente!",
       data: moduleCategories,
       pagination: {
@@ -59,7 +65,10 @@ export class ModuleCategoriesService {
     };
   }
 
+  /** Obtener Categoría */
   async findOne(uuid: string) {
+
+    //buscar por uuid
     const moduleCategory = await this.moduleCategoryRepository.findOne({ where: { uuid } });
 
     if (!moduleCategory) {
@@ -71,9 +80,13 @@ export class ModuleCategoriesService {
       message: "Categoría de Módulo Encontrada!",
       data: moduleCategory,
     };
+
   }
 
+  /** Actualizar Categoría */
   async update(uuid: string, updateModuleCategoryDto: UpdateModuleCategoryDto) {
+
+    //buscar por uuid
     const moduleCategoryToUpdate = await this.moduleCategoryRepository.findOne({ where: { uuid } });
 
     if (!moduleCategoryToUpdate) throw new NotFoundException(`Categoría de Módulo con uuid: ${uuid} no encontrada`);
@@ -83,42 +96,29 @@ export class ModuleCategoriesService {
       const updatedModuleCategory = await this.moduleCategoryRepository.save(moduleCategoryToUpdate);
 
       return {
-        success: true,
         message: "Categoría de Módulo actualizada exitosamente!",
         data: updatedModuleCategory,
       };
 
     } catch (error) {
-      this.handleDBErrors(error);
+      this.dbErrorHandler.handleDBErrors(error);
     }
   }
 
+  /** Eliminar Categoría */
   async remove(uuid: string) {
+
+     //buscar por uuid
     const moduleCategory = await this.moduleCategoryRepository.findOne({ where: { uuid } });
 
-    if (!moduleCategory) {
-      throw new NotFoundException(`La categoría de módulo con uuid ${uuid} no se encontró!`);
-    }
-
+    if (!moduleCategory) throw new NotFoundException(`La categoría de módulo con uuid ${uuid} no se encontró!`);
+    
     await this.moduleCategoryRepository.softDelete({ uuid });
 
     return {
-      success: true,
       message: "Categoría de Módulo eliminada exitosamente!",
       data: moduleCategory,
     };
   }
 
-  private handleDBErrors(error: any): never {
-    if (error instanceof NotFoundException) throw error;
-
-    if (error instanceof QueryFailedError) {
-      if ((error as any).errno === 1062) {
-        throw new BadRequestException((error as any).detail || (error as any).sqlMessage || 'Registro Duplicado');
-      }
-    }
-
-    console.error(error);
-    throw new InternalServerErrorException('Error del Servidor. Porfavor contacte al administrador del sistema!');
-  }
 }
