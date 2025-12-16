@@ -16,7 +16,7 @@ export class RolesService {
 
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
-    
+
     private readonly dbErrorHandler: DBErrorHandlerService
 
   ) { }
@@ -32,8 +32,8 @@ export class RolesService {
 
   /** Obtener Catálogo de Permisos */
   async getPermissionsCatalog() {
-   
-    const permissions = await this.permissionRepository.find({ 
+
+    const permissions = await this.permissionRepository.find({
       where: { is_active: true },
       relations: ['module']
     });
@@ -146,4 +146,57 @@ export class RolesService {
       data: role,
     };
   }
+
+  /** Obtener Módulos autorizados de Roles */
+  async getAuthorizedModulesByRole(userRoles: Role[]) {
+
+    //return {data: userRoles};
+    const categoryMap = new Map<string, any>();
+
+    userRoles.forEach(role => {
+      role.permissions.forEach(permission => {
+        const module = permission.module;
+        if (!module || !module.is_active) return;
+
+        const category = module.moduleCategory;
+
+        const categoryKey = category.uuid;
+
+        // Crear categoría si no existe
+        if (!categoryMap.has(categoryKey)) {
+          categoryMap.set(categoryKey, {
+            group: category.name || 'General',
+            active: category.is_active,
+            items: new Map<string, any>(),
+          });
+        }
+
+        const categoryEntry = categoryMap.get(categoryKey);
+
+        // Evitar módulos duplicados
+        if (!categoryEntry.items.has(module.uuid)) {
+          categoryEntry.items.set(module.uuid, {
+            icon: module.icon,
+            name: module.name,
+            route: module.url,
+            active: module.is_active,
+          });
+        }
+      });
+    });
+
+    // Convertir Maps a arrays
+    const authModules = Array.from(categoryMap.values()).map(category => ({
+      group: category.group,
+      active: category.active,
+      items: Array.from(category.items.values()),
+    }));
+
+    return {
+      message: "Módulos Autorizados obtenidos exitosamente!",
+      data: authModules,
+    };
+
+  }
+
 }

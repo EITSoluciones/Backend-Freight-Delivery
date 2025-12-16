@@ -2,8 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ClassSerializerInter
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { Auth } from 'src/auth/decorators';
+import { Auth, GetUser } from 'src/auth/decorators';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { User } from '../users/entities/user.entity';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller({
@@ -26,6 +27,13 @@ export class RolesController {
   @Auth()
   getPermissionsCatalog() {
     return this.rolesService.getPermissionsCatalog();
+  }
+
+  /** Obtener Catálogo de Roles */
+  @Get('authorized-modules')
+  @Auth()
+  getAuthorizedModulesByRole(@GetUser() user: User) {
+    return this.rolesService.getAuthorizedModulesByRole(user.roles);
   }
 
   /** Crear Rol */
@@ -65,7 +73,5 @@ export class RolesController {
   remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return this.rolesService.remove(uuid);
   }
-
-
 
 }
