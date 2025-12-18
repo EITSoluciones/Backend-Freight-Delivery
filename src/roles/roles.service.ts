@@ -1,12 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { Role } from './entities/role.entity';
 import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { Permission } from './entities/permission.entity';
+import { UpdateRolePermissionsDto } from './dto/update-role-permissions.dto';
 
 @Injectable()
 export class RolesService {
@@ -32,7 +33,6 @@ export class RolesService {
 
   /** Obtener Catálogo de Permisos */
   async getPermissionsCatalog() {
-
     const permissions = await this.permissionRepository.find({
       where: { is_active: true },
       relations: ['module']
@@ -103,7 +103,7 @@ export class RolesService {
     }
 
     return {
-      message: "Rol encontrado exitosamente!",
+      message: "Rol obtenido exitosamente!",
       data: role,
     };
 
@@ -198,5 +198,66 @@ export class RolesService {
     };
 
   }
+
+  /** Obtener Permisos por Rol */
+  async getPermissionsByRole(uuid: string) {
+
+    //buscar por uuid
+    const role = await this.roleRepository.findOne({
+      where: { uuid },
+      relations: ['permissions']
+    });
+
+    if (!role) {
+      throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
+    }
+
+    return {
+      message: "Permisos obtenidos exitosamente!",
+      data: role.permissions,
+    };
+
+  }
+
+  /** Actualizar Rol */
+  async updatePermissionsByRole(uuid: string, updateRolePermissionsDto: UpdateRolePermissionsDto) {
+
+    //buscar por uuid
+    const role = await this.roleRepository.findOne({
+      where: { uuid },
+      relations: ['permissions']
+    });
+
+    if (!role) throw new NotFoundException(`Rol con uuid: ${uuid} no encontrada`);
+
+    try {
+
+      //Buscar Permisos
+      const permissions = await this.permissionRepository.findBy({
+        uuid: In(updateRolePermissionsDto.permissionUuids),
+        is_active: true,
+      });
+
+      //Validar existencia de Permisos
+      if (permissions.length !== new Set(updateRolePermissionsDto.permissionUuids).size) {
+        throw new BadRequestException(
+          'Uno o más permisos no existen o están inactivos'
+        );
+      }
+
+      role.permissions = permissions;
+
+      await this.roleRepository.save(role);
+      
+      return {
+        message: `El Rol con uuid ${uuid} se ha actualizado exitosamente!`,
+        data: role.permissions,
+      };
+
+    } catch (error) {
+      this.dbErrorHandler.handleDBErrors(error);
+    }
+  }
+
 
 }
