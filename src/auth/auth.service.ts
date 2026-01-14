@@ -74,6 +74,12 @@ export class AuthService {
         user: {
           ...userWithoutPassword,
           platforms: user.platforms.map(p => p.code),
+          roles: user.roles.map(r => ({
+            uuid: r.uuid,
+            code: r.code,
+            name: r.name,
+            description: r.description,
+          }))
         },
       }
     };

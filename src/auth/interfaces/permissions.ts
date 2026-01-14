@@ -22,9 +22,16 @@ export enum Permissions {
 
     //Roles
     RolesView = 'roles:view',
-    RolesCreate = 'roles:create',
     RolesUpdate = 'roles:update',
-    RolesDelete = 'roles:delete',
+
+    //Bitácora
+    LogsView = 'logs:view',
+
+    //Clientes
+    CustomersView = 'customers:view',
+    CustomersCreate = 'customers:create',
+    CustomersUpdate = 'customers:update',
+    CustomersDelete = 'customers:delete',
 
     //Test
     Test = 'test:view'

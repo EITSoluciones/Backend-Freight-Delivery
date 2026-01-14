@@ -11,6 +11,7 @@ import { UpdateRolePermissionsDto } from './dto/update-role-permissions.dto';
 
 @Injectable()
 export class RolesService {
+  
   constructor(
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,

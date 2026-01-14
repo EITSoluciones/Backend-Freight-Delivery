@@ -53,7 +53,7 @@ export class ModuleCategoriesService {
     });
 
     return {
-      message: "Categorías de Módulos obtenidas exitosamente!",
+      message: "Categorías de Módulos obtenidos exitosamente!",
       data: moduleCategories,
       pagination: {
         pageNumber: page,
@@ -77,7 +77,7 @@ export class ModuleCategoriesService {
 
     return {
       success: true,
-      message: "Categoría de Módulo Encontrada!",
+      message: "Categoría de Módulo Encontrado!",
       data: moduleCategory,
     };
 
@@ -89,14 +89,14 @@ export class ModuleCategoriesService {
     //buscar por uuid
     const moduleCategoryToUpdate = await this.moduleCategoryRepository.findOne({ where: { uuid } });
 
-    if (!moduleCategoryToUpdate) throw new NotFoundException(`Categoría de Módulo con uuid: ${uuid} no encontrada`);
+    if (!moduleCategoryToUpdate) throw new NotFoundException(`Categoría de Módulo con uuid: ${uuid} no encontrado`);
 
     try {
       Object.assign(moduleCategoryToUpdate, updateModuleCategoryDto);
       const updatedModuleCategory = await this.moduleCategoryRepository.save(moduleCategoryToUpdate);
 
       return {
-        message: "Categoría de Módulo actualizada exitosamente!",
+        message: "Categoría de Módulo actualizado exitosamente!",
         data: updatedModuleCategory,
       };
 
@@ -121,4 +121,12 @@ export class ModuleCategoriesService {
     };
   }
 
+  /** Obtener Catálogo de Categorías */
+  async getCategoriesCatalog() {
+    const categories = await this.moduleCategoryRepository.find({ where: { is_active: true } });
+    return {
+      message: "Categorías obtenidos exitosamente!",
+      data: categories,
+    };
+  }
 }

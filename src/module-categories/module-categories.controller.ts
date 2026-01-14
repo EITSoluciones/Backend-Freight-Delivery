@@ -16,6 +16,13 @@ import { Permissions } from 'src/auth/interfaces';
 export class ModuleCategoriesController {
   constructor(private readonly moduleCategoriesService: ModuleCategoriesService) { }
 
+  /** Obtener Catálogo de Categorías */
+  @Get('catalog')
+  @Auth()
+  getCategoriesCatalog() {
+    return this.moduleCategoriesService.getCategoriesCatalog();
+  }
+
   /** Crear Categoría */
   @Post()
   @Auth(Permissions.ModuleCategoriesCreate)

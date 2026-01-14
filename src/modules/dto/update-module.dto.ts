@@ -1,10 +1,10 @@
-import { IsBoolean, IsInt, IsOptional, IsString, IsUrl } from "class-validator";
+import { IsBoolean, IsInt, IsOptional, IsString, IsUrl, IsUUID } from "class-validator";
 
 export class UpdateModuleDto {
 
     @IsOptional()
-    @IsInt()
-    module_category_id?: number;
+    @IsUUID()
+    module_category_uuid?: string;
 
     @IsOptional()
     @IsString()

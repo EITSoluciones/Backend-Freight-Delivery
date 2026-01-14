@@ -24,7 +24,7 @@ export class UsersService {
   /** Crear Usuario */
   async create(createUserDto: CreateUserDto) {
     try {
-      
+
       const { password, platforms, roles, ...userData } = createUserDto;
 
       const platformsIds = await this.findPlatformsByCode(platforms);
@@ -53,22 +53,23 @@ export class UsersService {
   /** Obtener Usuarios */
   async findAll(paginationDto: PaginationDto) {
 
-    const { limit = 10, page = 1 } = paginationDto;
-    const offset = (page - 1) * limit; //conversión a offset
+    const { limit = 10, page = 1, is_active } = paginationDto;
+    const offset = (page - 1) * limit;
+
+    const bool = is_active === "true";
+
+    const where = {
+      ...(bool !== undefined && { is_active: bool }),
+    };
 
     const [users, total] = await this.userRepository.findAndCount({
+      where,
       take: limit,
       skip: offset,
       relations: ['platforms', 'roles'],
     });
 
-    // const usersWithoutPassword = users.map(user => {
-    //   const { password, ...userWithoutPassword } = user;
-    //   return userWithoutPassword;
-    // });
-
     return {
-      success: true,
       message: "Usuarios obtenidos exitosamente!",
       data: users,
       pagination: {
@@ -194,4 +195,31 @@ export class UsersService {
     console.error(error);
     throw new InternalServerErrorException('Error del Servidor. Porfavor contacte al administrador del sistema!');
   }
+
+  /** Búsqueda de usuario por email o nickname */
+  async search(email?: string, username?: string) {
+    const query = this.userRepository.createQueryBuilder('user');
+
+    if (email) {
+      query.andWhere('user.email LIKE :email', {
+        email: `%${email}%`,
+      });
+    }
+
+    if (username) {
+      query.andWhere('user.username LIKE :username', {
+        username: `%${username}%`,
+      });
+    }
+
+    const response = await query.getMany();
+
+    return {
+      success: true,
+      message: "Respuesta Obtenida!",
+      data: response,
+    };
+
+  }
+
 }

@@ -14,7 +14,16 @@ import { Permissions } from 'src/auth/interfaces';
   version: '1',
 })
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
+
+  @Get('search')
+  searchUsers(
+    @Query('email') email?: string,
+    @Query('username') username?: string,
+  ) {
+    return this.usersService.search(email, username);
+  }
+
 
   @Post()
   @Auth(Permissions.UsersCreate)
