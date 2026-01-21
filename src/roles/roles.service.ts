@@ -159,7 +159,7 @@ export class RolesService {
         const module = permission.module;
         if (!module || !module.is_active) return;
 
-        const category = module.moduleCategory;
+        const category = module.module_category;
 
         const categoryKey = category.uuid;
 

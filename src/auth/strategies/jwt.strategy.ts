@@ -30,7 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         const { uuid } = payload;
         const user = await this.userRepository.findOne({
             where: { uuid },
-            relations: ['roles', 'roles.permissions', 'roles.permissions.module', 'roles.permissions.module.moduleCategory'],
+            relations: ['roles', 'roles.permissions', 'roles.permissions.module', 'roles.permissions.module.module_category'],
         });
 
         if (!user) {

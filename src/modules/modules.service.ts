@@ -33,7 +33,7 @@ export class ModulesService {
       where,
       take: limit,
       skip: offset,
-      relations: ['moduleCategory'],
+      relations: ['module_category'],
     });
 
     return {
@@ -54,7 +54,7 @@ export class ModulesService {
   async findOne(uuid: string) {
 
     //buscar por uuid
-    const module = await this.moduleRepository.findOne({ where: { uuid }, relations: ['moduleCategory'] });
+    const module = await this.moduleRepository.findOne({ where: { uuid }, relations: ['module_category'] });
 
     if (!module) {
       throw new NotFoundException(`El módulo con uuid ${uuid} no se encontró!`);

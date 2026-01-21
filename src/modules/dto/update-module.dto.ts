@@ -19,7 +19,6 @@ export class UpdateModuleDto {
     icon?: string;
 
     @IsOptional()
-    @IsUrl()
     url?: string;
 
     @IsOptional()

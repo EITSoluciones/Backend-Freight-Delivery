@@ -44,7 +44,7 @@ export class Module {
 
     @ManyToOne(() => ModuleCategory)
     @JoinColumn({ name: 'module_category_id' })
-    moduleCategory: ModuleCategory;
+    module_category: ModuleCategory;
 
     @OneToMany(() => Permission, (permission) => permission.module)
     permissions: Permission[];

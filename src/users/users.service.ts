@@ -200,26 +200,25 @@ export class UsersService {
   async search(email?: string, username?: string) {
     const query = this.userRepository.createQueryBuilder('user');
 
-    if (email) {
-      query.andWhere('user.email LIKE :email', {
-        email: `%${email}%`,
-      });
-    }
-
-    if (username) {
-      query.andWhere('user.username LIKE :username', {
-        username: `%${username}%`,
-      });
+    if (email && username) {
+      query.where(
+        'user.email = :email OR user.username = :username',
+        { email, username },
+      );
+    } else if (email) {
+      query.where('user.email = :email', { email });
+    } else if (username) {
+      query.where('user.username = :username', { username });
     }
 
     const response = await query.getMany();
 
     return {
       success: true,
-      message: "Respuesta Obtenida!",
+      message: 'Respuesta Obtenida!',
       data: response,
     };
-
   }
+
 
 }
