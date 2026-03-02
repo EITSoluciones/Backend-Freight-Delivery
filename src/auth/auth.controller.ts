@@ -11,6 +11,7 @@ import { Permissions, ValidRoles } from './interfaces';
 import { Auth } from './decorators/auth.decorator';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { RequestRefreshTokenDto } from './dto/request-refresh-token.dto';
 
 @ApiTags('Autentificación')
 @Controller({
@@ -20,10 +21,24 @@ import { ApiTags } from '@nestjs/swagger';
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
+  // Login
   @Post('login')
   @HttpCode(200)
   loginUser(@Body() loginUserDto: LoginUserDto) {
     return this.authService.login(loginUserDto);
+  }
+
+  //login refreshToken
+  @Post('login-refresh-token')
+  @HttpCode(200)
+  loginTokenRefresh(@Body() RequestRefreshTokenDto: RequestRefreshTokenDto) {
+    return  this.authService.refreshAccessToken(RequestRefreshTokenDto.refresh_token);
+  }
+
+  //logout refreshToken
+  @Post('revoke-refresh-token') @HttpCode(200)
+  revokeToken(@Body() RequestRefreshTokenDto: RequestRefreshTokenDto) {
+    return  this.authService.revokeRefreshToken(RequestRefreshTokenDto.refresh_token);
   }
 
   @Get('private')

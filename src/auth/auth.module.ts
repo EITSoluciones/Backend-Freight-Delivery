@@ -9,13 +9,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { Platform } from 'src/platforms/entities/platform.entity';
 import { Role } from 'src/roles/entities/role.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, Platform, Role]), 
+    TypeOrmModule.forFeature([User, Platform, Role,RefreshToken]), 
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -24,7 +25,7 @@ import { Role } from 'src/roles/entities/role.entity';
         return {
           secret: 's3cr3tjwt2025',
           signOptions: {
-            expiresIn: '2h'
+            expiresIn:process.env.JWT_EXPIRATION,
           }
         }
       }
