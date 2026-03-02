@@ -1,22 +1,19 @@
-import { Type } from 'class-transformer';
-import { IsOptional, IsPositive, Min } from "class-validator";
+// common/dto/success-response.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 
-export class SuccessResponseDto {
-
-  @ApiProperty({ example: true, description: 'Indica si la operación fue exitosa' })
+export class SuccessResponseDto<T> {
+  @ApiProperty({ example: true })
   success: boolean;
 
-  @ApiProperty({ example: 'Operación exitosa', description: 'Mensaje descriptivo de la operación' })
+  @ApiProperty({ example: 'Operación exitosa' })
   message: string;
 
-  @ApiProperty({ description: 'Datos de la respuesta' })
-  data: TemplateStringsArray;
+  @ApiProperty()
+  data: T; 
 
-  constructor(success: boolean, message: string, data: TemplateStringsArray) {
+  constructor(success: boolean, message: string, data: T) {
     this.success = success;
     this.message = message;
     this.data = data;
   }
-
 }
