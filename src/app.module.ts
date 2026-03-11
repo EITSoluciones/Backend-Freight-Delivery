@@ -13,6 +13,7 @@ import { AddressesModule } from './addresses/addresses.module';
 import { ModuleCategoriesModule } from './module-categories/module-categories.module';
 import { ModulesModule } from './modules/modules.module';
 import { CommonModule } from './common/common.module';
+import { DeliveryDriversModule } from './delivery-drivers/delivery-drivers.module';
 
 
 @Module({
@@ -34,7 +35,7 @@ import { CommonModule } from './common/common.module';
       logging: process.env.DB_LOGGING === 'true', //Muestra en consola las consultas que ejecuta TypeORM. NO RECOMENDADO EN PRODUCCIÓN
     }),
 
-    CommonModule, ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule, ClientsModule, AddressesModule, ModuleCategoriesModule, ModulesModule
+    CommonModule, ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule, ClientsModule, AddressesModule, ModuleCategoriesModule, ModulesModule, DeliveryDriversModule
   ],
   controllers: [AppController],
   providers: [AppService],
