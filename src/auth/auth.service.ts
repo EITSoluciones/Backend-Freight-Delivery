@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { LoginUserDto } from './dto';
 import { log } from 'console';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -97,15 +97,13 @@ export class AuthService {
   async refreshAccessToken(oldRefreshToken: string):
     Promise<SuccessResponseDto<{ accessToken: string, refreshToken: string }>> {
     try {
-      console.log(oldRefreshToken);
-
       const payload = this.jwtService.verify(oldRefreshToken, {
         secret: process.env.JWT_REFRESH_SECRET,
       });
       const currentTokenEntity = await this.refreshTokenRepository.findOne({
         where: { jti: payload.jti, uuid_user: payload.uuid }
       });
-      if (!currentTokenEntity) throw new UnauthorizedException('Sesión inválida');
+      if (!currentTokenEntity) throw new ForbiddenException('La sesión ha expirado o es inválida. Por favor, inicie sesión de nuevo.');
       const accessToken = this.getAccessToken({ uuid: payload.uuid });
       const newRefreshToken = this.getRefreshToken({ uuid: payload.uuid });
       await this.refreshTokenRepository.delete(currentTokenEntity.id);
@@ -116,7 +114,7 @@ export class AuthService {
         { accessToken, refreshToken: newRefreshToken }
       );
     } catch (error) {
-      throw new UnauthorizedException(error.message ?? 'Token de refresco inválido o expirado');
+      throw error;
     }
   }
 
@@ -158,7 +156,7 @@ export class AuthService {
     });
   }
 
-  private async saveRefreshToken(uuidUser: string, refreshToken: string, platformId: number) { 
+  private async saveRefreshToken(uuidUser: string, refreshToken: string, platformId: number) {
     const tokenHash = await bcrypt.hash(refreshToken, 10);
     const decoded = this.jwtService.decode(refreshToken) as { exp?: number; jti: string } | null;
     const expiresOnUtc = decoded?.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);

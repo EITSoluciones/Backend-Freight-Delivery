@@ -50,7 +50,9 @@ export class Role {
 
     @BeforeInsert()
     generateUuid() {
-        this.uuid = uuidv4();
+        if (!this.uuid) {
+            this.uuid = uuidv4();
+        }
     }
 
     @ManyToMany(() => User, (user) => user.roles)

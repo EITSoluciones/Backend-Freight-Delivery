@@ -57,6 +57,8 @@ export class Permission {
 
     @BeforeInsert()
     generateUuid() {
-        this.uuid = uuidv4();
+        if (!this.uuid) {
+            this.uuid = uuidv4();
+        }
     }
 }

@@ -10,9 +10,10 @@ async function bootstrap() {
   //app.setGlobalPrefix('api'); //Prefijo para las rutas de la aplicación
 
   // Habilita CORS para cualquier origen
-  if (process.env.CORS_ENABLED) {
+  if (process.env.CORS_ENABLED == "true") {
+    const origins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim());
     app.enableCors({
-      origin: process.env.CORS_ORIGIN,
+      origin: origins,
       credentials: false,
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       allowedHeaders: 'Content-Type,Authorization',
