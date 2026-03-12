@@ -1,6 +1,6 @@
 import {
-  Client
-} from "src/clients/entities/client.entity";
+  Customer
+} from "src/customers/entities/customer.entity";
 import {
   BeforeInsert,
   Column,
@@ -126,13 +126,13 @@ export class Address {
   })
   deleted_at ? : Date | null;
 
-  @ManyToOne(() => Client, (client) => client.addresses, {
+  @ManyToOne(() => Customer, (customer) => customer.addresses, {
     onDelete: 'CASCADE'
   })
   @JoinColumn({
-    name: 'client_id'
+    name: 'customer_id'
   })
-  client: Client;
+  customer: Customer;
 
   @BeforeInsert()
   generateUuid() {

@@ -166,7 +166,7 @@ export async function seedPermissions(dataSource: DataSource) {
       moduleUrl: '/logs',
     },
 
-    // Clientes
+    // Customers
     {
       uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000031',
       code: Permissions.CustomersView,

@@ -2,13 +2,13 @@ import {
   PartialType
 } from '@nestjs/mapped-types';
 import {
-  CreateClientDto
-} from './create-client.dto';
+  CreateCustomerDto
+} from './create-customer.dto';
 import {
   IsArray
 } from 'class-validator';
 
-export class UpdateClientDto extends PartialType(CreateClientDto) {
+export class UpdateCustomerDto extends PartialType(CreateCustomerDto) {
   @IsArray()
   addresses: never;
 }

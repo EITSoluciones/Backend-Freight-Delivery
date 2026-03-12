@@ -1,6 +1,4 @@
-import {
-  Address
-} from "src/addresses/entities/address.entity";
+import { Address } from 'src/addresses/entities/address.entity';
 import {
   BeforeInsert,
   Column,
@@ -9,77 +7,74 @@ import {
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
-  UpdateDateColumn
-} from "typeorm";
-import {
-  v4 as uuidv4
-} from 'uuid';
+  UpdateDateColumn,
+} from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
-@Entity('clients')
-export class Client {
-
+@Entity('customers')
+export class Customer {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
   @Column({
     type: 'uuid',
-    unique: true
+    unique: true,
   })
   uuid: string;
 
   @Column({
     type: 'varchar',
     length: 50,
-    unique: true
+    unique: true,
   })
   code: string;
 
   @Column({
     type: 'varchar',
-    length: 255
+    length: 255,
   })
   name: string;
 
   @Column({
     type: 'varchar',
     length: 255,
-    unique: true
+    unique: true,
   })
   email: string;
 
   @Column({
     type: 'varchar',
     length: 25,
-    nullable: true
+    nullable: true,
   })
   phone: string;
 
   @Column('bool', {
-    default: true
+    default: true,
   })
   is_active: boolean;
 
   @CreateDateColumn({
     type: 'timestamp',
-    name: 'created_at'
+    name: 'created_at',
   })
   created_at: Date;
 
   @UpdateDateColumn({
     type: 'timestamp',
-    name: 'updated_at'
+    name: 'updated_at',
   })
   updated_at: Date;
 
   @DeleteDateColumn({
     name: 'deleted_at',
-    nullable: true
+    nullable: true,
   })
-  deleted_at ? : Date | null;
+  deleted_at?: Date | null;
 
-  @OneToMany(() => Address, (address) => address.client, {
+  @OneToMany(() => Address, (address) => address.customer, {
     cascade: true,
-    eager: true
+    eager: true,
   })
   addresses: Address[];
 
@@ -93,5 +88,4 @@ export class Client {
     this.email = this.email.toLowerCase().trim();
     this.code = this.code.toUpperCase().trim();
   }
-
 }

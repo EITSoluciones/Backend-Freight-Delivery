@@ -4,46 +4,34 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  InjectRepository
-} from '@nestjs/typeorm';
-import {
-  Repository,
-  QueryFailedError,
-  Not
-} from 'typeorm';
-import {
-  Address
-} from './entities/address.entity';
-import {
-  CreateAddressDto
-} from './dto/create-address.dto';
-import {
-  UpdateAddressDto
-} from './dto/update-address.dto';
-import {
-  ClientsService
-} from 'src/clients/clients.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, QueryFailedError, Not } from 'typeorm';
+import { Address } from './entities/address.entity';
+import { CreateAddressDto } from './dto/create-address.dto';
+import { UpdateAddressDto } from './dto/update-address.dto';
+import { CustomersService } from 'src/customers/customers.service';
 
 @Injectable()
 export class AddressesService {
-
   constructor(
     @InjectRepository(Address)
-    private readonly addressRepository: Repository < Address > ,
-    private readonly clientsService: ClientsService,
+    private readonly addressRepository: Repository<Address>,
+    private readonly customersService: CustomersService,
   ) {}
 
-  async addAddressToClient(clientUuid: string, createAddressDto: CreateAddressDto) {
-    const client = await this.clientsService.getClientByUuid(clientUuid);
+  async addAddressToCustomer(
+    customerUuid: string,
+    createAddressDto: CreateAddressDto,
+  ) {
+    const customer = await this.customersService.getCustomerByUuid(customerUuid);
 
     if (createAddressDto.is_primary) {
-      await this.unsetCurrentPrimaryAddress(client.id);
+      await this.unsetCurrentPrimaryAddress(customer.id);
     }
 
     const newAddress = this.addressRepository.create({
       ...createAddressDto,
-      client: client,
+      customer: customer,
     });
 
     try {
@@ -62,10 +50,11 @@ export class AddressesService {
     const address = await this.getAddressByUuid(uuid);
 
     if (updateAddressDto.is_primary) {
-      await this.unsetCurrentPrimaryAddress(address.client.id, address.id);
+      await this.unsetCurrentPrimaryAddress(address.customer.id, address.id);
     }
 
     this.addressRepository.merge(address, updateAddressDto);
+
     try {
       const updatedAddress = await this.addressRepository.save(address);
       return {
@@ -80,9 +69,8 @@ export class AddressesService {
 
   async remove(uuid: string) {
     const address = await this.getAddressByUuid(uuid);
-    await this.addressRepository.softDelete({
-      uuid
-    });
+    await this.addressRepository.softDelete({ uuid });
+
     return {
       success: true,
       message: 'Address deleted successfully!',
@@ -99,24 +87,25 @@ export class AddressesService {
     };
   }
 
-  private async getAddressByUuid(uuid: string): Promise < Address > {
+  private async getAddressByUuid(uuid: string): Promise<Address> {
     const address = await this.addressRepository.findOne({
-      where: {
-        uuid
-      },
-      relations: ['client'],
+      where: { uuid },
+      relations: ['customer'],
     });
+
     if (!address) {
       throw new NotFoundException(`Address with uuid ${uuid} not found!`);
     }
+
     return address;
   }
 
-  private async unsetCurrentPrimaryAddress(clientId: number, newPrimaryAddressId ? : number) {
+  private async unsetCurrentPrimaryAddress(
+    customerId: number,
+    newPrimaryAddressId?: number,
+  ) {
     const whereClause: any = {
-      client: {
-        id: clientId
-      },
+      customer: { id: customerId },
       is_primary: true,
     };
 
@@ -125,7 +114,7 @@ export class AddressesService {
     }
 
     const currentPrimary = await this.addressRepository.findOne({
-      where: whereClause
+      where: whereClause,
     });
 
     if (currentPrimary) {
@@ -135,17 +124,26 @@ export class AddressesService {
   }
 
   private handleDBErrors(error: any): never {
-    if (error instanceof NotFoundException || error instanceof BadRequestException) {
+    if (
+      error instanceof NotFoundException ||
+      error instanceof BadRequestException
+    ) {
       throw error;
     }
 
     if (error instanceof QueryFailedError) {
       if ((error as any).errno === 1062) {
-        throw new BadRequestException((error as any).detail || (error as any).sqlMessage || 'Duplicate entry');
+        throw new BadRequestException(
+          (error as any).detail ||
+            (error as any).sqlMessage ||
+            'Duplicate entry',
+        );
       }
     }
 
     console.error(error);
-    throw new InternalServerErrorException('Server Error. Please contact the system administrator!');
+    throw new InternalServerErrorException(
+      'Server Error. Please contact the system administrator!',
+    );
   }
 }

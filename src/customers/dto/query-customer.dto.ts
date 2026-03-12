@@ -10,7 +10,7 @@ import {
   Transform
 } from 'class-transformer';
 
-export class QueryClientDto extends PaginationDto {
+export class QueryCustomerDto extends PaginationDto {
 
   @IsOptional()
   declare is_active?: string;
