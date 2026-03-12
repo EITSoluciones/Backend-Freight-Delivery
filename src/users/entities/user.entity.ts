@@ -69,20 +69,12 @@ export class User {
     roles: Role[];
 
     @BeforeInsert()
-    checkFieldsBeforeInsert() {
+    processBeforeInsert() {
+        if (!this.uuid) {
+            this.uuid = uuidv4();
+        }
+
         this.email = this.email.toLowerCase().trim();
         this.username = this.username.toLowerCase().trim();
     }
-
-    @BeforeUpdate()
-    checkFieldsBeforeUpdate() {
-        this.email = this.email.toLowerCase().trim();
-        this.username = this.username.toLowerCase().trim();
-    }
-
-    @BeforeInsert()
-    generateUuid() {
-        this.uuid = uuidv4();
-    }
-
 }

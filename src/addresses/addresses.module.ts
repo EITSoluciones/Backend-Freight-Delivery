@@ -15,15 +15,16 @@ import {
   Address
 } from './entities/address.entity';
 import {
-  ClientsModule
-} from 'src/clients/clients.module';
+  CustomersModule
+} from 'src/customers/customers.module';
 
 @Module({
   controllers: [AddressesController],
   providers: [AddressesService],
   imports: [
     TypeOrmModule.forFeature([Address]),
-    forwardRef(() => ClientsModule),
+    forwardRef(() =>CustomersModule
+),
   ],
   exports: [AddressesService],
 })

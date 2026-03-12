@@ -14,7 +14,7 @@ import {
   CreateAddressDto
 } from 'src/addresses/dto/create-address.dto';
 
-export class CreateClientDto {
+export class CreateCustomerDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)

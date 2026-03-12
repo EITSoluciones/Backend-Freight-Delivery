@@ -8,7 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { PlatformsModule } from './platforms/platforms.module';
 import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
-import { ClientsModule } from './clients/clients.module';
+import { CustomersModule } from './customers/customers.module';
 import { AddressesModule } from './addresses/addresses.module';
 import { ModuleCategoriesModule } from './module-categories/module-categories.module';
 import { ModulesModule } from './modules/modules.module';
@@ -35,7 +35,7 @@ import { DeliveryDriversModule } from './delivery-drivers/delivery-drivers.modul
       logging: process.env.DB_LOGGING === 'true', //Muestra en consola las consultas que ejecuta TypeORM. NO RECOMENDADO EN PRODUCCIÓN
     }),
 
-    CommonModule, ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule, ClientsModule, AddressesModule, ModuleCategoriesModule, ModulesModule, DeliveryDriversModule
+    CommonModule, ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule, CustomersModule, AddressesModule, ModuleCategoriesModule, ModulesModule, DeliveryDriversModule
   ],
   controllers: [AppController],
   providers: [AppService],
