@@ -1,132 +1,138 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ModuleCategory } from './entities/module-category.entity';
 import { CreateModuleCategoryDto } from './dto/create-module-category.dto';
 import { UpdateModuleCategoryDto } from './dto/update-module-category.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
+import {
+  PaginatedResponse,
+  SuccessResponseDto,
+} from 'src/common/dto/success-response.dto';
 
 @Injectable()
 export class ModuleCategoriesService {
-
-  //inyecciones 
   constructor(
     @InjectRepository(ModuleCategory)
     private readonly moduleCategoryRepository: Repository<ModuleCategory>,
     private readonly dbErrorHandler: DBErrorHandlerService,
-  ) { }
+  ) {}
 
-  /** Crear Categoría */
-  async create(createModuleCategoryDto: CreateModuleCategoryDto) {
-    try {
+  async create(
+    createModuleCategoryDto: CreateModuleCategoryDto,
+  ): Promise<SuccessResponseDto<ModuleCategory>> {
+    const moduleCategory = this.moduleCategoryRepository.create(
+      createModuleCategoryDto,
+    );
+    const savedModuleCategory =
+      await this.moduleCategoryRepository.save(moduleCategory);
 
-      const moduleCategory = this.moduleCategoryRepository.create(createModuleCategoryDto);
-      const savedModuleCategory = await this.moduleCategoryRepository.save(moduleCategory);
-
-      return {
-        message: "Categoría de Módulo Creada Exitosamente!",
-        data: savedModuleCategory,
-      };
-
-    } catch (error) {
-      this.dbErrorHandler.handleDBErrors(error);
-    }
-
+    return new SuccessResponseDto(
+      true,
+      'Categoría de Módulo Creada Exitosamente!',
+      savedModuleCategory,
+    );
   }
 
-  /** Obtener Categorías */
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResponse<ModuleCategory>> {
     const { limit = 10, page = 1, is_active } = paginationDto;
     const offset = (page - 1) * limit;
 
-    const bool = is_active === "true"; // TODO: PENDIENTE VALIDAR (El dto lo obtiene como string)
+    const bool = is_active === 'true';
 
     const where = {
       ...(bool !== undefined && { is_active: bool }),
     };
 
-    const [moduleCategories, total] = await this.moduleCategoryRepository.findAndCount({
-      where,
-      take: limit,
-      skip: offset,
+    const [moduleCategories, total] =
+      await this.moduleCategoryRepository.findAndCount({
+        where,
+        take: limit,
+        skip: offset,
+      });
+
+    return PaginatedResponse.create(
+      moduleCategories,
+      total,
+      page,
+      limit,
+      'Categorías de Módulos obtenidos exitosamente!',
+    );
+  }
+
+  async findOne(uuid: string): Promise<SuccessResponseDto<ModuleCategory>> {
+    const moduleCategory = await this.moduleCategoryRepository.findOne({
+      where: { uuid },
     });
 
-    return {
-      message: "Categorías de Módulos obtenidos exitosamente!",
-      data: moduleCategories,
-      pagination: {
-        pageNumber: page,
-        totalPages: Math.ceil(total / limit),
-        totalCount: total,
-        hasPreviousPage: (page > 1),
-        hasNextPage: (total > (page * limit)),
-      }
-    };
-  }
-
-  /** Obtener Categoría */
-  async findOne(uuid: string) {
-
-    //buscar por uuid
-    const moduleCategory = await this.moduleCategoryRepository.findOne({ where: { uuid } });
-
     if (!moduleCategory) {
-      throw new NotFoundException(`La categoría de módulo con uuid ${uuid} no se encontró!`);
+      throw new NotFoundException(
+        `La categoría de módulo con uuid ${uuid} no se encontró!`,
+      );
     }
 
-    return {
-      success: true,
-      message: "Categoría de Módulo Encontrado!",
-      data: moduleCategory,
-    };
-
+    return new SuccessResponseDto(
+      true,
+      'Categoría de Módulo Encontrado!',
+      moduleCategory,
+    );
   }
 
-  /** Actualizar Categoría */
-  async update(uuid: string, updateModuleCategoryDto: UpdateModuleCategoryDto) {
+  async update(
+    uuid: string,
+    updateModuleCategoryDto: UpdateModuleCategoryDto,
+  ): Promise<SuccessResponseDto<ModuleCategory>> {
+    const moduleCategoryToUpdate = await this.moduleCategoryRepository.findOne({
+      where: { uuid },
+    });
 
-    //buscar por uuid
-    const moduleCategoryToUpdate = await this.moduleCategoryRepository.findOne({ where: { uuid } });
+    if (!moduleCategoryToUpdate)
+      throw new NotFoundException(
+        `Categoría de Módulo con uuid: ${uuid} no encontrado`,
+      );
 
-    if (!moduleCategoryToUpdate) throw new NotFoundException(`Categoría de Módulo con uuid: ${uuid} no encontrado`);
+    Object.assign(moduleCategoryToUpdate, updateModuleCategoryDto);
+    const updatedModuleCategory = await this.moduleCategoryRepository.save(
+      moduleCategoryToUpdate,
+    );
 
-    try {
-      Object.assign(moduleCategoryToUpdate, updateModuleCategoryDto);
-      const updatedModuleCategory = await this.moduleCategoryRepository.save(moduleCategoryToUpdate);
-
-      return {
-        message: "Categoría de Módulo actualizado exitosamente!",
-        data: updatedModuleCategory,
-      };
-
-    } catch (error) {
-      this.dbErrorHandler.handleDBErrors(error);
-    }
+    return new SuccessResponseDto(
+      true,
+      'Categoría de Módulo actualizado exitosamente!',
+      updatedModuleCategory,
+    );
   }
 
-  /** Eliminar Categoría */
-  async remove(uuid: string) {
+  async remove(uuid: string): Promise<SuccessResponseDto<ModuleCategory>> {
+    const moduleCategory = await this.moduleCategoryRepository.findOne({
+      where: { uuid },
+    });
 
-     //buscar por uuid
-    const moduleCategory = await this.moduleCategoryRepository.findOne({ where: { uuid } });
+    if (!moduleCategory)
+      throw new NotFoundException(
+        `La categoría de módulo con uuid ${uuid} no se encontró!`,
+      );
 
-    if (!moduleCategory) throw new NotFoundException(`La categoría de módulo con uuid ${uuid} no se encontró!`);
-    
     await this.moduleCategoryRepository.softDelete({ uuid });
 
-    return {
-      message: "Categoría de Módulo eliminada exitosamente!",
-      data: moduleCategory,
-    };
+    return new SuccessResponseDto(
+      true,
+      'Categoría de Módulo eliminada exitosamente!',
+      moduleCategory,
+    );
   }
 
-  /** Obtener Catálogo de Categorías */
-  async getCategoriesCatalog() {
-    const categories = await this.moduleCategoryRepository.find({ where: { is_active: true } });
-    return {
-      message: "Categorías obtenidos exitosamente!",
-      data: categories,
-    };
+  async getCategoriesCatalog(): Promise<SuccessResponseDto<ModuleCategory[]>> {
+    const categories = await this.moduleCategoryRepository.find({
+      where: { is_active: true },
+    });
+    return new SuccessResponseDto(
+      true,
+      'Categorías obtenidos exitosamente!',
+      categories,
+    );
   }
 }

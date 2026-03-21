@@ -1,24 +1,47 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {
+  BeforeInsert,
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
-@Entity()
+@Entity('products')
 export class Product {
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-    @PrimaryGeneratedColumn('increment')
-    id: number;            // ID auto-incremental
+  @Column({ type: 'uuid', unique: true })
+  uuid: string;
 
-    @Column('text')
-    nombre: string;        // Nombre del producto
+  @Column('text')
+  nombre: string;
 
-    @Column({ type: 'text', nullable: true })
-    descripcion?: string;  // Descripción opcional
+  @Column({ type: 'text', nullable: true })
+  descripcion?: string;
 
-    @Column('int')
-    stock: number;         // Cantidad en inventario
+  @Column('int', { default: 0 })
+  stock: number;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ type: 'bool', default: true })
+  is_active: boolean;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  deletedAt?: Date;
+
+  @BeforeInsert()
+  processBeforeInsert() {
+    if (!this.uuid) {
+      this.uuid = uuidv4();
+    }
+  }
 }

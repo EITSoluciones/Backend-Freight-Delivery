@@ -74,7 +74,6 @@ export class Customer {
 
   @OneToMany(() => Address, (address) => address.customer, {
     cascade: true,
-    eager: true,
   })
   addresses: Address[];
 

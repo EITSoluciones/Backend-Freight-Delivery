@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, QueryFailedError, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -7,24 +12,33 @@ import { Role } from 'src/roles/entities/role.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import {
+  SuccessResponseDto,
+  PaginatedResponse,
+} from 'src/common/dto/success-response.dto';
 import * as bcrypt from 'bcrypt';
+import { LogsService } from 'src/logs/logs.service';
+import { LogModule } from 'src/logs/enums/log-module.enum';
+import { LogAction } from 'src/logs/enums/log-action.enum';
 
 @Injectable()
 export class UsersService {
-
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Platform)
     private readonly platformRepository: Repository<Platform>,
     @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>
-  ) { }
+    private readonly roleRepository: Repository<Role>,
+    private readonly logsService: LogsService,
+  ) {}
 
   /** Crear Usuario */
-  async create(createUserDto: CreateUserDto) {
+  async create(
+    createUserDto: CreateUserDto,
+    currentUser?: User,
+  ): Promise<SuccessResponseDto<User>> {
     try {
-
       const { password, platforms, roles, ...userData } = createUserDto;
 
       const platformsIds = await this.findPlatformsByCode(platforms);
@@ -34,29 +48,37 @@ export class UsersService {
         ...userData,
         password: bcrypt.hashSync(password, 10),
         platforms: platformsIds,
-        roles: rolesIds
+        roles: rolesIds,
       });
 
       const savedUser = await this.userRepository.save(user);
 
-      return {
-        success: true,
-        message: "Usuario Creado Exitosamente!",
-        data: savedUser,
-      };
+      await this.logsService.log(currentUser || null, {
+        module: LogModule.USERS,
+        action: LogAction.CREATE,
+        entityUuid: savedUser.uuid,
+        entityName: savedUser.username,
+        description: `Usuario creado: ${savedUser.username}`,
+        newData: { username: savedUser.username, email: savedUser.email },
+      });
 
+      return new SuccessResponseDto(
+        true,
+        'Usuario Creado Exitosamente!',
+        savedUser,
+      );
     } catch (error) {
       this.handleDBErrors(error);
     }
   }
 
   /** Obtener Usuarios */
-  async findAll(paginationDto: PaginationDto) {
-
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResponse<User>> {
     const { limit = 10, page = 1, is_active } = paginationDto;
-    const offset = (page - 1) * limit;
 
-    const bool = is_active === "true";
+    const bool = is_active === 'true';
 
     const where = {
       ...(bool !== undefined && { is_active: bool }),
@@ -65,47 +87,41 @@ export class UsersService {
     const [users, total] = await this.userRepository.findAndCount({
       where,
       take: limit,
-      skip: offset,
+      skip: (page - 1) * limit,
       relations: ['platforms', 'roles'],
     });
 
-    return {
-      message: "Usuarios obtenidos exitosamente!",
-      data: users,
-      pagination: {
-        pageNumber: page,
-        totalPages: limit,
-        totalCount: total,
-        hasPreviousPage: (page > 1),
-        hasNextPage: (total > (page * limit)), //Validar formula
-      }
-    };
-
+    return PaginatedResponse.create(
+      users,
+      total,
+      page,
+      limit,
+      'Usuarios obtenidos exitosamente!',
+    );
   }
 
   /** Buscar Usuario */
-  async findOne(uuid: string) {
-
+  async findOne(uuid: string): Promise<SuccessResponseDto<User>> {
     const user = await this.userRepository.findOne({
       where: { uuid },
-      relations: ['platforms', 'roles']
+      relations: ['platforms', 'roles'],
     });
 
     if (!user) {
-      throw new NotFoundException(`El usuario con uuid ${uuid} no se encontró!`);
+      throw new NotFoundException(
+        `El usuario con uuid ${uuid} no se encontró!`,
+      );
     }
 
-    return {
-      success: true,
-      message: "Usuario Encontrado!",
-      data: user,
-    };
-
+    return new SuccessResponseDto(true, 'Usuario Encontrado!', user);
   }
 
   /** Actualizar Parcialmente Usuario */
-  async partialUpdate(uuid: string, updateUserDto: UpdateUserDto) {
-
+  async partialUpdate(
+    uuid: string,
+    updateUserDto: UpdateUserDto,
+    currentUser?: User,
+  ): Promise<SuccessResponseDto<User>> {
     const { platforms, roles, ...userDataToUpdate } = updateUserDto;
 
     const userToUpdate = await this.userRepository.findOne({
@@ -113,19 +129,19 @@ export class UsersService {
       relations: ['platforms', 'roles'],
     });
 
-    if (!userToUpdate) throw new NotFoundException(`Usuario con uuid: ${uuid} no encontrado`);
+    if (!userToUpdate)
+      throw new NotFoundException(`Usuario con uuid: ${uuid} no encontrado`);
 
     try {
-      // Solo actualiza campos enviados
+      const oldData = { ...userToUpdate };
+
       Object.assign(userToUpdate, userDataToUpdate);
 
-      // Actualiza plataformas si se enviaron
       if (platforms) {
         const platformsEntities = await this.findPlatformsByCode(platforms);
         userToUpdate.platforms = platformsEntities;
       }
 
-      // Actualiza roles si se enviaron
       if (roles) {
         const rolesEntities = await this.findRolesByCode(roles);
         userToUpdate.roles = rolesEntities;
@@ -133,44 +149,70 @@ export class UsersService {
 
       const updatedUser = await this.userRepository.save(userToUpdate);
 
-      return {
-        success: true,
-        message: "Usuario actualizado exitosamente!",
-        data: updatedUser,
-      };
+      await this.logsService.log(currentUser || null, {
+        module: LogModule.USERS,
+        action: LogAction.UPDATE,
+        entityUuid: updatedUser.uuid,
+        entityName: updatedUser.username,
+        description: `Usuario actualizado: ${updatedUser.username}`,
+        oldData,
+        newData: updateUserDto,
+      });
 
+      return new SuccessResponseDto(
+        true,
+        'Usuario actualizado exitosamente!',
+        updatedUser,
+      );
     } catch (error) {
       this.handleDBErrors(error);
     }
   }
 
   /** Eliminar Usuario */
-  async remove(uuid: string) {
-
+  async remove(
+    uuid: string,
+    currentUser?: User,
+  ): Promise<SuccessResponseDto<User>> {
     const user = await this.userRepository.findOne({
-      where: { uuid }
+      where: { uuid },
     });
 
     if (!user) {
-      throw new NotFoundException(`El usuario con uuid ${uuid} no se encontró!`);
+      throw new NotFoundException(
+        `El usuario con uuid ${uuid} no se encontró!`,
+      );
     }
 
     await this.userRepository.softDelete({ uuid });
 
-    return {
-      success: true,
-      message: "Usuario eliminado exitosamente!",
-      data: user,
-    };
+    await this.logsService.log(currentUser || null, {
+      module: LogModule.USERS,
+      action: LogAction.DELETE,
+      entityUuid: user.uuid,
+      entityName: user.username,
+      description: `Usuario eliminado: ${user.username}`,
+      oldData: { username: user.username, email: user.email },
+    });
 
+    return new SuccessResponseDto(
+      true,
+      'Usuario eliminado exitosamente!',
+      user,
+    );
   }
 
   async findPlatformsByCode(codes: string[]): Promise<Platform[]> {
     const platformsIds = await this.platformRepository.find({
       where: { code: In(codes) },
     });
-    const missingCodes = codes.filter(code => !platformsIds.some(p => p.code === code));
-    if (missingCodes.length) throw new NotFoundException(`Plataformas no encontradas: ${missingCodes.join(', ')}`);
+    const missingCodes = codes.filter(
+      (code) => !platformsIds.some((p) => p.code === code),
+    );
+    if (missingCodes.length)
+      throw new NotFoundException(
+        `Plataformas no encontradas: ${missingCodes.join(', ')}`,
+      );
     return platformsIds;
   }
 
@@ -178,8 +220,13 @@ export class UsersService {
     const rolesIds = await this.roleRepository.find({
       where: { code: In(codes) },
     });
-    const missingCodes = codes.filter(code => !rolesIds.some(p => p.code === code));
-    if (missingCodes.length) throw new NotFoundException(`Roles no encontradas: ${missingCodes.join(', ')}`);
+    const missingCodes = codes.filter(
+      (code) => !rolesIds.some((p) => p.code === code),
+    );
+    if (missingCodes.length)
+      throw new NotFoundException(
+        `Roles no encontradas: ${missingCodes.join(', ')}`,
+      );
     return rolesIds;
   }
 
@@ -188,23 +235,32 @@ export class UsersService {
 
     if (error instanceof QueryFailedError) {
       if ((error as any).errno === 1062) {
-        throw new BadRequestException((error as any).detail || (error as any).sqlMessage || 'Registro Duplicado');
+        throw new BadRequestException(
+          (error as any).detail ||
+            (error as any).sqlMessage ||
+            'Registro Duplicado',
+        );
       }
     }
 
     console.error(error);
-    throw new InternalServerErrorException('Error del Servidor. Porfavor contacte al administrador del sistema!');
+    throw new InternalServerErrorException(
+      'Error del Servidor. Porfavor contacte al administrador del sistema!',
+    );
   }
 
   /** Búsqueda de usuario por email o nickname */
-  async search(email?: string, username?: string) {
+  async search(
+    email?: string,
+    username?: string,
+  ): Promise<SuccessResponseDto<User[]>> {
     const query = this.userRepository.createQueryBuilder('user');
 
     if (email && username) {
-      query.where(
-        'user.email = :email OR user.username = :username',
-        { email, username },
-      );
+      query.where('user.email = :email OR user.username = :username', {
+        email,
+        username,
+      });
     } else if (email) {
       query.where('user.email = :email', { email });
     } else if (username) {
@@ -213,12 +269,6 @@ export class UsersService {
 
     const response = await query.getMany();
 
-    return {
-      success: true,
-      message: 'Respuesta Obtenida!',
-      data: response,
-    };
+    return new SuccessResponseDto(true, 'Respuesta Obtenida!', response);
   }
-
-
 }

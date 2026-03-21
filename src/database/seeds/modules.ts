@@ -107,6 +107,33 @@ export async function seedModules(dataSource: DataSource) {
       is_active: true,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
+    {
+      uuid: '5ab7ed60-cd3d-4af0-b0b1-4dcab91a1011',
+      name: 'Productos',
+      description: 'Administración de productos',
+      icon: 'pi pi-box',
+      url: '/products',
+      is_active: true,
+      categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
+    },
+    {
+      uuid: '5ab7ed60-cd3d-4af0-b0b1-4dcab91a1012',
+      name: 'Repartidores',
+      description: 'Administración de repartidores',
+      icon: 'pi pi-truck',
+      url: '/delivery-drivers',
+      is_active: true,
+      categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
+    },
+    {
+      uuid: '5ab7ed60-cd3d-4af0-b0b1-4dcab91a1013',
+      name: 'Empresas',
+      description: 'Administración de empresas',
+      icon: 'pi pi-building',
+      url: '/companies',
+      is_active: true,
+      categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
+    },
   ];
 
   for (const item of modules) {

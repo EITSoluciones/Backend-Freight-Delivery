@@ -14,15 +14,16 @@ import { ModuleCategoriesModule } from './module-categories/module-categories.mo
 import { ModulesModule } from './modules/modules.module';
 import { CommonModule } from './common/common.module';
 import { DeliveryDriversModule } from './delivery-drivers/delivery-drivers.module';
-
+import { LogsModule } from './logs/logs.module';
+import { DocumentsModule } from './documents/documents.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, //Hace que esté disponible en toda la app
+      isGlobal: true,
     }),
 
-    //Conexión Base de Datos
     TypeOrmModule.forRoot({
       type: process.env.DB_TYPE as any,
       host: process.env.DB_HOST,
@@ -30,16 +31,27 @@ import { DeliveryDriversModule } from './delivery-drivers/delivery-drivers.modul
       database: process.env.DB_DATABASE,
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
-      autoLoadEntities: process.env.DB_AUTOLOAD === 'true', //Carga en automático Entidades.
-      synchronize: process.env.DB_SYNCHRONIZE === 'true', //Sincroniza automáticamente el esquema de la base de datos cada vez que se levanta el servidor. NO RECOMENDADO EN PRODUCCIÓN
-      logging: process.env.DB_LOGGING === 'true', //Muestra en consola las consultas que ejecuta TypeORM. NO RECOMENDADO EN PRODUCCIÓN
+      autoLoadEntities: process.env.DB_AUTOLOAD === 'true',
+      synchronize: process.env.DB_SYNCHRONIZE === 'true',
+      logging: process.env.DB_LOGGING === 'true',
     }),
 
-    CommonModule, ProductsModule, AuthModule, PlatformsModule, RolesModule, UsersModule, CustomersModule, AddressesModule, ModuleCategoriesModule, ModulesModule, DeliveryDriversModule
+    CommonModule,
+    ProductsModule,
+    AuthModule,
+    PlatformsModule,
+    RolesModule,
+    UsersModule,
+    CustomersModule,
+    AddressesModule,
+    ModuleCategoriesModule,
+    ModulesModule,
+    DeliveryDriversModule,
+    LogsModule,
+    DocumentsModule,
+    CompanyModule,
   ],
   controllers: [AppController],
   providers: [AppService],
-
 })
-
 export class AppModule {}

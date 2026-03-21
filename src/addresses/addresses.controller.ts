@@ -4,17 +4,13 @@ import {
   Patch,
   Param,
   Delete,
-  ParseUUIDPipe
+  ParseUUIDPipe,
 } from '@nestjs/common';
-import {
-  AddressesService
-} from './addresses.service';
-import {
-  UpdateAddressDto
-} from './dto/update-address.dto';
-import {
-  ApiTags
-} from '@nestjs/swagger';
+import { AddressesService } from './addresses.service';
+import { UpdateAddressDto } from './dto/update-address.dto';
+import { ApiTags } from '@nestjs/swagger';
+import { GetUser } from 'src/auth/decorators';
+import { User } from 'src/users/entities/user.entity';
 
 @ApiTags('Addresses')
 @Controller({
@@ -28,12 +24,16 @@ export class AddressesController {
   update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateAddressDto: UpdateAddressDto,
+    @GetUser() currentUser: User,
   ) {
-    return this.addressesService.update(uuid, updateAddressDto);
+    return this.addressesService.update(uuid, updateAddressDto, currentUser);
   }
 
   @Delete(':uuid')
-  remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.addressesService.remove(uuid);
+  remove(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @GetUser() currentUser: User,
+  ) {
+    return this.addressesService.remove(uuid, currentUser);
   }
 }
