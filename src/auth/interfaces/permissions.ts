@@ -50,6 +50,17 @@ export enum Permissions {
   CompanyUpdate = 'company:update',
   CompanyDelete = 'company:delete',
 
+  //Direcciones
+  AddressesView = 'addresses:view',
+  AddressesUpdate = 'addresses:update',
+  AddressesDelete = 'addresses:delete',
+
+  //Plataformas
+  PlatformsView = 'platforms:view',
+  PlatformsCreate = 'platforms:create',
+  PlatformsUpdate = 'platforms:update',
+  PlatformsDelete = 'platforms:delete',
+
   //Test
   Test = 'test:view',
 }

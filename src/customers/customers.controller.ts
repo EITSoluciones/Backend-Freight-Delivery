@@ -18,6 +18,7 @@ import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Auth, GetUser } from 'src/auth/decorators';
+import { Permissions } from 'src/auth/interfaces';
 import { User } from 'src/users/entities/user.entity';
 
 @ApiTags('Customers')
@@ -32,6 +33,7 @@ export class CustomersController {
   ) {}
 
   @Post()
+  @Auth(Permissions.CustomersCreate)
   create(
     @Body() createCustomerDto: CreateCustomerDto,
     @GetUser() currentUser: User,
@@ -40,16 +42,19 @@ export class CustomersController {
   }
 
   @Get()
+  @Auth(Permissions.CustomersView)
   findAll(@Query() queryCustomerDto: QueryCustomerDto) {
     return this.customersService.findAll(queryCustomerDto);
   }
 
   @Get(':uuid')
+  @Auth(Permissions.CustomersView)
   findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return this.customersService.findOne(uuid);
   }
 
   @Patch(':uuid')
+  @Auth(Permissions.CustomersUpdate)
   update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateCustomerDto: UpdateCustomerDto,
@@ -59,6 +64,7 @@ export class CustomersController {
   }
 
   @Delete(':uuid')
+  @Auth(Permissions.CustomersDelete)
   remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @GetUser() currentUser: User,
@@ -67,6 +73,7 @@ export class CustomersController {
   }
 
   @Post(':uuid/addresses')
+  @Auth(Permissions.CustomersUpdate)
   addAddress(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() createAddressDto: CreateAddressDto,
