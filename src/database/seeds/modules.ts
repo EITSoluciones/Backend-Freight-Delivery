@@ -134,6 +134,15 @@ export async function seedModules(dataSource: DataSource) {
       is_active: true,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
+    {
+      uuid: '5ab7ed60-cd3d-4af0-b0b1-4dcab91a1014',
+      name: 'Direcciones',
+      description: 'Administración de direcciones',
+      icon: 'pi pi-map-marker',
+      url: '/addresses',
+      is_active: true,
+      categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
+    },
   ];
 
   for (const item of modules) {

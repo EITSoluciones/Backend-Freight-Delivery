@@ -311,6 +311,66 @@ export async function seedPermissions(dataSource: DataSource) {
       is_active: true,
       moduleUrl: '/companies',
     },
+
+    // Addresses
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000060',
+      code: Permissions.AddressesView,
+      name: 'Visualizar Direcciones',
+      description: 'Permite visualizar direcciones',
+      is_active: true,
+      moduleUrl: '/addresses',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000061',
+      code: Permissions.AddressesUpdate,
+      name: 'Actualizar Direcciones',
+      description: 'Permite actualizar direcciones',
+      is_active: true,
+      moduleUrl: '/addresses',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000062',
+      code: Permissions.AddressesDelete,
+      name: 'Eliminar Direcciones',
+      description: 'Permite eliminar direcciones',
+      is_active: true,
+      moduleUrl: '/addresses',
+    },
+
+    // Platforms
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000070',
+      code: Permissions.PlatformsView,
+      name: 'Visualizar Plataformas',
+      description: 'Permite visualizar plataformas',
+      is_active: true,
+      moduleUrl: '/platforms',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000071',
+      code: Permissions.PlatformsCreate,
+      name: 'Crear Plataformas',
+      description: 'Permite crear plataformas',
+      is_active: true,
+      moduleUrl: '/platforms',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000072',
+      code: Permissions.PlatformsUpdate,
+      name: 'Actualizar Plataformas',
+      description: 'Permite actualizar plataformas',
+      is_active: true,
+      moduleUrl: '/platforms',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000073',
+      code: Permissions.PlatformsDelete,
+      name: 'Eliminar Plataformas',
+      description: 'Permite eliminar plataformas',
+      is_active: true,
+      moduleUrl: '/platforms',
+    },
   ];
 
   for (const item of permissions) {
