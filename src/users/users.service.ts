@@ -122,7 +122,7 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<User>> {
-    const { platforms, roles, ...userDataToUpdate } = updateUserDto;
+    const { password, platforms, roles, ...userDataToUpdate } = updateUserDto;
 
     const userToUpdate = await this.userRepository.findOne({
       where: { uuid },
@@ -136,6 +136,10 @@ export class UsersService {
       const oldData = { ...userToUpdate };
 
       Object.assign(userToUpdate, userDataToUpdate);
+
+      if (password) {
+        userToUpdate.password = bcrypt.hashSync(password, 10);
+      }
 
       if (platforms) {
         const platformsEntities = await this.findPlatformsByCode(platforms);
@@ -156,7 +160,12 @@ export class UsersService {
         entityName: updatedUser.username,
         description: `Usuario actualizado: ${updatedUser.username}`,
         oldData,
-        newData: updateUserDto,
+        newData: {
+          ...userDataToUpdate,
+          ...(platforms && { platforms }),
+          ...(roles && { roles }),
+          ...(password && { password: '[updated]' }),
+        },
       });
 
       return new SuccessResponseDto(

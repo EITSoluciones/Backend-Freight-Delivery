@@ -288,6 +288,40 @@ export async function seedPermissions(dataSource: DataSource) {
       moduleUrl: '/delivery-drivers',
     },
 
+    // Delivery Vehicles
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000044',
+      code: Permissions.DeliveryVehiclesView,
+      name: 'Visualizar Vehículos de Reparto',
+      description: 'Permite visualizar vehículos de reparto',
+      is_active: true,
+      moduleUrl: '/delivery-vehicles',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000045',
+      code: Permissions.DeliveryVehiclesCreate,
+      name: 'Crear Vehículos de Reparto',
+      description: 'Permite crear vehículos de reparto',
+      is_active: true,
+      moduleUrl: '/delivery-vehicles',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000046',
+      code: Permissions.DeliveryVehiclesUpdate,
+      name: 'Actualizar Vehículos de Reparto',
+      description: 'Permite actualizar vehículos de reparto',
+      is_active: true,
+      moduleUrl: '/delivery-vehicles',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000047',
+      code: Permissions.DeliveryVehiclesDelete,
+      name: 'Eliminar Vehículos de Reparto',
+      description: 'Permite eliminar vehículos de reparto',
+      is_active: true,
+      moduleUrl: '/delivery-vehicles',
+    },
+
     // Company
     {
       uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000050',

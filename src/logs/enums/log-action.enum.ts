@@ -1,0 +1,10 @@
+export enum LogAction {
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+  DELETE = 'DELETE',
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+  REFRESH_TOKEN = 'REFRESH_TOKEN',
+  VIEW = 'VIEW',
+  SEARCH = 'SEARCH',
+}

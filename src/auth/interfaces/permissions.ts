@@ -47,6 +47,12 @@ export enum Permissions {
   DeliveryDriversUpdate = 'deliverydrivers:update',
   DeliveryDriversDelete = 'deliverydrivers:delete',
 
+  //Vehiculos de reparto
+  DeliveryVehiclesView = 'deliveryvehicles:view',
+  DeliveryVehiclesCreate = 'deliveryvehicles:create',
+  DeliveryVehiclesUpdate = 'deliveryvehicles:update',
+  DeliveryVehiclesDelete = 'deliveryvehicles:delete',
+
   //Empresa
   CompanyView = 'company:view',
   CompanyCreate = 'company:create',
