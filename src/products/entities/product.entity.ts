@@ -12,31 +12,31 @@ import { v4 as uuidv4 } from 'uuid';
 @Entity('products')
 export class Product {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ type: 'uuid', unique: true })
-  uuid: string;
+  uuid!: string;
 
   @Column('text')
-  nombre: string;
+  nombre!: string;
 
   @Column({ type: 'text', nullable: true })
-  descripcion?: string;
+  descripcion?: string | null;
 
   @Column('int', { default: 0 })
-  stock: number;
+  stock!: number;
 
   @Column({ type: 'bool', default: true })
-  is_active: boolean;
+  is_active!: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 
   @BeforeInsert()
   processBeforeInsert() {

@@ -12,22 +12,22 @@ import { Document } from '../../documents/entities/document.entity';
 @Entity('company_documents')
 export class CompanyDocument {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ type: 'uuid', unique: true })
-  uuid: string;
+  uuid!: string;
 
   @Column({ type: 'boolean', default: false })
-  is_default: boolean;
+  is_default!: boolean;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  description: string;
+  description?: string | null;
 
   @Column({ type: 'boolean', default: true })
-  is_active: boolean;
+  is_active!: boolean;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deleted_at?: Date | null;
@@ -35,18 +35,18 @@ export class CompanyDocument {
   @ManyToOne(() => Company, (company) => company.documents, {
     onDelete: 'CASCADE',
   })
-  company: Company;
+  company!: Company;
 
   @Column({ type: 'int' })
-  company_id: number;
+  company_id!: number;
 
   @ManyToOne(() => Document, {
     eager: true,
     cascade: true,
     onDelete: 'CASCADE',
   })
-  document: Document;
+  document!: Document;
 
   @Column({ type: 'int' })
-  document_id: number;
+  document_id!: number;
 }

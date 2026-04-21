@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocumentsService } from './documents.service';
 import { Document } from './entities/document.entity';
 
@@ -14,6 +14,6 @@ import { Document } from './entities/document.entity';
     }),
   ],
   providers: [DocumentsService],
-  exports: [DocumentsService, TypeOrmModule],
+   exports: [DocumentsService],
 })
 export class DocumentsModule {}

@@ -17,6 +17,7 @@ import { DeliveryDriversModule } from './delivery-drivers/delivery-drivers.modul
 import { LogsModule } from './logs/logs.module';
 import { DocumentsModule } from './documents/documents.module';
 import { CompanyModule } from './company/company.module';
+import { AppConfigModule } from './app-config/app-config.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { CompanyModule } from './company/company.module';
     LogsModule,
     DocumentsModule,
     CompanyModule,
+    AppConfigModule,
   ],
   controllers: [AppController],
   providers: [AppService],

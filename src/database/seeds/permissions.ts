@@ -20,6 +20,16 @@ export async function seedPermissions(dataSource: DataSource) {
   const moduleMap = new Map(modules.map((m) => [m.url, m]));
 
   const permissions: PermissionSeed[] = [
+    // Dashboard
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000001',
+      code: Permissions.DashboardView,
+      name: 'Visualizar Dashboard',
+      description: 'Permite visualizar el dashboard',
+      is_active: true,
+      moduleUrl: '/dashboard',
+    },
+
     // Usuarios
     {
       uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000002',
@@ -371,6 +381,24 @@ export async function seedPermissions(dataSource: DataSource) {
       is_active: true,
       moduleUrl: '/platforms',
     },
+
+    // App Config
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000080',
+      code: Permissions.AppConfigView,
+      name: 'Visualizar Configuración',
+      description: 'Permite visualizar configuración de la app',
+      is_active: true,
+      moduleUrl: '/app-config',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000082',
+      code: Permissions.AppConfigUpdate,
+      name: 'Actualizar Configuración',
+      description: 'Permite actualizar configuración de la app',
+      is_active: true,
+      moduleUrl: '/app-config',
+    },
   ];
 
   for (const item of permissions) {
@@ -401,6 +429,14 @@ export async function seedPermissions(dataSource: DataSource) {
       await permissionRepo.save(permissionRepo.create(payload));
     }
   }
+
+  await permissionRepo
+    .createQueryBuilder()
+    .softDelete()
+    .where('code IN (:...codes)', {
+      codes: ['appconfig:create', 'appconfig:delete'],
+    })
+    .execute();
 
   console.log('✔ Permissions sembrados');
 }

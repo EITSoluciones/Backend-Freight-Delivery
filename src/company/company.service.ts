@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import 'multer';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Company, CompanyStatus } from './entities/company.entity';
@@ -125,45 +126,6 @@ export class CompanyService {
       true,
       'Empresa eliminada exitosamente',
       company,
-    );
-  }
-
-  async validateActivation(
-    code: string,
-  ): Promise<SuccessResponseDto<{ valid: boolean; company: Company | null }>> {
-    const company = await this.companyRepository.findOne({
-      where: { code_activation: code },
-    });
-
-    if (!company) {
-      return new SuccessResponseDto(true, 'Código inválido', {
-        valid: false,
-        company: null,
-      });
-    }
-
-    const isValid = company.status === CompanyStatus.ACTIVE;
-    return new SuccessResponseDto(
-      true,
-      isValid ? 'Código válido' : 'Empresa pendiente de activación',
-      { valid: isValid, company },
-    );
-  }
-
-  async activateCompany(uuid: string): Promise<SuccessResponseDto<Company>> {
-    const company = await this.companyRepository.findOne({ where: { uuid } });
-
-    if (!company) {
-      throw new NotFoundException(`Empresa con uuid ${uuid} no encontrada`);
-    }
-
-    company.status = CompanyStatus.ACTIVE;
-    const updated = await this.companyRepository.save(company);
-
-    return new SuccessResponseDto(
-      true,
-      'Empresa activada exitosamente',
-      updated,
     );
   }
 
@@ -350,7 +312,7 @@ export class CompanyService {
       );
     }
 
-    await this.documentsService.delete(companyDocument.document.uuid);
+    await this.documentsService.deleteByUuid(companyDocument.document.uuid);
     await this.companyDocumentRepository.softDelete({ uuid: documentUuid });
 
     return new SuccessResponseDto(true, 'Documento eliminado', companyDocument);

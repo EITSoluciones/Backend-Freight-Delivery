@@ -3,31 +3,34 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  ManyToOne,
+  Generated,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Company } from './company.entity';
 
-@Entity('company_configs')
-export class CompanyConfig {
+@Entity('app_configs')
+export class AppConfig {
   @PrimaryGeneratedColumn('increment')
   id!: number;
 
   @Column({ type: 'uuid', unique: true })
+  @Generated('uuid')
   uuid!: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100, unique: true })
   key!: string;
 
   @Column({ type: 'text', nullable: true })
   value?: string | null;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  type?: string | null;
+  @Column({ type: 'varchar', length: 50, default: 'string' })
+  type!: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  is_public!: boolean;
 
   @Column({ type: 'boolean', default: true })
   is_active!: boolean;
@@ -38,14 +41,6 @@ export class CompanyConfig {
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updated_at!: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  @DeleteDateColumn({ type: 'timestamp', name: 'deleted_at', nullable: true })
   deleted_at?: Date | null;
-
-  @ManyToOne(() => Company, (company) => company.configs, {
-    onDelete: 'CASCADE',
-  })
-  company!: Company;
-
-  @Column({ type: 'int' })
-  company_id!: number;
 }

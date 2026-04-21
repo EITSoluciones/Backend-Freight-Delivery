@@ -7,3 +7,4 @@ export * from './user-platforms';
 export * from './user-roles';
 export * from './role-permissions';
 export * from './users';
+export * from './app-config';

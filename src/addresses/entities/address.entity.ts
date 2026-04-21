@@ -1,6 +1,4 @@
-import {
-  Customer
-} from "src/customers/entities/customer.entity";
+import { Customer } from 'src/customers/entities/customer.entity';
 import {
   BeforeInsert,
   Column,
@@ -10,129 +8,126 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-  JoinColumn
-} from "typeorm";
-import {
-  v4 as uuidv4
-} from 'uuid';
+  JoinColumn,
+} from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity('addresses')
 export class Address {
-
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({
     type: 'uuid',
-    unique: true
+    unique: true,
   })
-  uuid: string;
+  uuid!: string;
 
   @Column({
     type: 'varchar',
-    length: 255
+    length: 255,
   })
-  street: string;
+  street!: string;
 
   @Column({
     type: 'varchar',
     length: 50,
     name: 'external_number',
-    nullable: true
+    nullable: true,
   })
-  external_number: string;
+  external_number?: string | null;
 
   @Column({
     type: 'varchar',
     length: 50,
     name: 'internal_number',
-    nullable: true
+    nullable: true,
   })
-  internal_number: string;
+  internal_number?: string | null;
 
   @Column({
     type: 'varchar',
-    length: 255
+    length: 255,
   })
-  neighborhood: string;
+  neighborhood!: string;
 
   @Column({
     type: 'varchar',
-    length: 255
+    length: 255,
   })
-  municipality: string;
+  municipality!: string;
 
   @Column({
     type: 'varchar',
-    length: 255
+    length: 255,
   })
-  state: string;
+  state!: string;
 
   @Column({
     type: 'varchar',
-    length: 255
+    length: 255,
   })
-  country: string;
+  country!: string;
 
   @Column({
     type: 'varchar',
     length: 10,
-    name: 'postal_code'
+    name: 'postal_code',
   })
-  postal_code: string;
+  postal_code!: string;
 
   @Column({
     type: 'decimal',
     precision: 11,
     scale: 8,
-    nullable: true
+    nullable: true,
   })
-  longitude: number;
+  longitude?: number | null;
 
   @Column({
     type: 'decimal',
     precision: 10,
     scale: 8,
-    nullable: true
+    nullable: true,
   })
-  latitude: number;
+  latitude?: number | null;
 
   @Column('bool', {
     default: false,
-    name: 'is_primary'
+    name: 'is_primary',
   })
-  is_primary: boolean;
+  is_primary!: boolean;
 
   @Column('bool', {
-    default: true
+    default: true,
   })
-  is_active: boolean;
+  is_active!: boolean;
 
   @CreateDateColumn({
     type: 'timestamp',
-    name: 'created_at'
+    name: 'created_at',
   })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({
     type: 'timestamp',
-    name: 'updated_at'
+    name: 'updated_at',
   })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({
     name: 'deleted_at',
-    nullable: true
+    nullable: true,
   })
-  deleted_at ? : Date | null;
+  deleted_at?: Date | null;
 
   @ManyToOne(() => Customer, (customer) => customer.addresses, {
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
   })
   @JoinColumn({
-    name: 'customer_id'
+    name: 'customer_id',
   })
-  customer: Customer;
+  customer!: Customer;
 
   @BeforeInsert()
   generateUuid() {

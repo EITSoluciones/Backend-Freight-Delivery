@@ -1,4 +1,7 @@
 export enum Permissions {
+  //Dashboard
+  DashboardView = 'dashboard:view',
+
   //Usuarios
   UsersView = 'users:view',
   UsersCreate = 'users:create',
@@ -60,6 +63,10 @@ export enum Permissions {
   PlatformsCreate = 'platforms:create',
   PlatformsUpdate = 'platforms:update',
   PlatformsDelete = 'platforms:delete',
+
+  //App Config
+  AppConfigView = 'appconfig:view',
+  AppConfigUpdate = 'appconfig:update',
 
   //Test
   Test = 'test:view',

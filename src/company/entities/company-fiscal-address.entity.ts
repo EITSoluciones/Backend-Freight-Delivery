@@ -12,61 +12,61 @@ import { Company } from './company.entity';
 @Entity('company_fiscal_addresses')
 export class CompanyFiscalAddress {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ type: 'uuid', unique: true })
-  uuid: string;
+  uuid!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  business_name: string;
+  business_name!: string;
 
   @Column({ type: 'varchar', length: 20 })
-  rfc: string;
+  rfc!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  street: string;
+  street!: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  external_number: string;
+  external_number?: string | null;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  internal_number: string;
+  internal_number?: string | null;
 
   @Column({ type: 'varchar', length: 255 })
-  colony: string;
+  colony!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  city: string;
+  city!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  state: string;
+  state!: string;
 
   @Column({ type: 'varchar', length: 10 })
-  zip_code: string;
+  zip_code!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  country: string;
+  country?: string | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
-  latitude: number;
+  latitude?: number | null;
 
   @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
-  longitude: number;
+  longitude?: number | null;
 
   @Column({ type: 'boolean', default: false })
-  is_default: boolean;
+  is_default!: boolean;
 
   @Column({ type: 'boolean', default: true })
-  is_active: boolean;
+  is_active!: boolean;
 
   @Column({ type: 'text', nullable: true })
-  reference: string;
+  reference?: string | null;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deleted_at?: Date | null;
@@ -74,8 +74,8 @@ export class CompanyFiscalAddress {
   @ManyToOne(() => Company, (company) => company.fiscal_addresses, {
     onDelete: 'CASCADE',
   })
-  company: Company;
+  company!: Company;
 
   @Column({ type: 'int' })
-  company_id: number;
+  company_id!: number;
 }

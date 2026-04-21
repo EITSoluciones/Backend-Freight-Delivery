@@ -143,6 +143,15 @@ export async function seedModules(dataSource: DataSource) {
       is_active: true,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
+    {
+      uuid: '5ab7ed60-cd3d-4af0-b0b1-4dcab91a1015',
+      name: 'Configuración',
+      description: 'Configuración global de la aplicación',
+      icon: 'pi pi-cog',
+      url: '/app-config',
+      is_active: true,
+      categoryUuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
+    },
   ];
 
   for (const item of modules) {

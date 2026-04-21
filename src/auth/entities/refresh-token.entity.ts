@@ -15,33 +15,32 @@ import { Platform } from 'src/platforms/entities/platform.entity';
 export class RefreshToken {
   @Exclude()
   @PrimaryGeneratedColumn('increment')
-  id: number;
-  
+  id!: number;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
-  jti: string;
+  jti?: string | null;
 
   @Column({ type: 'varchar', length: 200 })
-  token: string;
+  token!: string;
 
   @Index()
   @Column({ type: 'uuid' })
-  uuid_user: string;
+  uuid_user!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'uuid_user', referencedColumnName: 'uuid' })
-  user: User;
-
+  user!: User;
 
   @Column({ type: 'int' })
-  platform_id: number;
+  platform_id!: number;
 
   @ManyToOne(() => Platform, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'platform_id', referencedColumnName: 'id' })
-  platform: Platform;
+  platform!: Platform;
 
   @Column({ type: 'timestamp', precision: 6 })
-  expires_on_utc: Date;
+  expires_on_utc!: Date;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 }

@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Patch,
   Delete,
   Body,
@@ -37,7 +36,7 @@ import { Permissions } from '../auth/interfaces';
   version: '1',
 })
 export class CompanyController {
-  constructor(private readonly companyService: CompanyService) {}
+  constructor(private readonly companyService: CompanyService) { }
 
   // ============ COMPANY ============
   @Post()
@@ -68,18 +67,6 @@ export class CompanyController {
   @Auth(Permissions.CompanyDelete)
   remove(@Param('uuid') uuid: string) {
     return this.companyService.remove(uuid);
-  }
-
-  // Activation endpoints (public)
-  @Post('validate-activation')
-  validateActivation(@Body('code') code: string) {
-    return this.companyService.validateActivation(code);
-  }
-
-  @Post(':uuid/activate')
-  @Auth(Permissions.CompanyUpdate)
-  activateCompany(@Param('uuid') uuid: string) {
-    return this.companyService.activateCompany(uuid);
   }
 
   // ============ FISCAL ADDRESSES ============
@@ -147,40 +134,5 @@ export class CompanyController {
     return this.companyService.deleteDocument(documentUuid);
   }
 
-  // ============ CONFIGS ============
-  @Post(':uuid/configs')
-  @Auth(Permissions.CompanyUpdate)
-  createConfig(
-    @Param('uuid') uuid: string,
-    @Body() dto: CreateCompanyConfigDto,
-  ) {
-    return this.companyService.createConfig(uuid, dto);
-  }
 
-  @Get(':uuid/configs')
-  @Auth(Permissions.CompanyView)
-  getConfigs(@Param('uuid') uuid: string) {
-    return this.companyService.getConfigs(uuid);
-  }
-
-  @Get(':uuid/configs/:key')
-  @Auth(Permissions.CompanyView)
-  getConfigValue(@Param('uuid') uuid: string, @Param('key') key: string) {
-    return this.companyService.getConfigValue(uuid, key);
-  }
-
-  @Patch('configs/:configUuid')
-  @Auth(Permissions.CompanyUpdate)
-  updateConfig(
-    @Param('configUuid') configUuid: string,
-    @Body() dto: UpdateCompanyConfigDto,
-  ) {
-    return this.companyService.updateConfig(configUuid, dto);
-  }
-
-  @Delete('configs/:configUuid')
-  @Auth(Permissions.CompanyDelete)
-  deleteConfig(@Param('configUuid') configUuid: string) {
-    return this.companyService.deleteConfig(configUuid);
-  }
 }

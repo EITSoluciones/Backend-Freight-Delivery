@@ -21,50 +21,50 @@ export enum CompanyStatus {
 @Entity('companies')
 export class Company {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ type: 'uuid', unique: true })
-  uuid: string;
+  uuid!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  name: string;
+  name!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  commercial_name: string;
+  commercial_name?: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  logo: string;
+  logo?: string | null;
 
   @Column({ type: 'varchar', length: 50, unique: true })
-  code_activation: string;
+  code_activation!: string;
 
   @Column({
     type: 'varchar',
     length: 50,
     default: CompanyStatus.PENDING_ACTIVATION,
   })
-  status: CompanyStatus;
+  status!: CompanyStatus;
 
   @Column({ type: 'boolean', default: true })
-  is_active: boolean;
+  is_active!: boolean;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  phone: string;
+  phone?: string | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  email: string;
+  email?: string | null;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description?: string | null;
 
   @Column({ type: 'json', nullable: true })
-  metadata: Record<string, any>;
+  metadata?: Record<string, any> | null;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deleted_at?: Date | null;
@@ -72,13 +72,15 @@ export class Company {
   @OneToMany(() => CompanyFiscalAddress, (address) => address.company, {
     cascade: true,
   })
-  fiscal_addresses: CompanyFiscalAddress[];
+  fiscal_addresses!: CompanyFiscalAddress[];
 
   @OneToMany(() => CompanyDocument, (document) => document.company, {
     cascade: true,
   })
-  documents: CompanyDocument[];
+  documents!: CompanyDocument[];
 
-  @OneToMany(() => CompanyConfig, (config) => config.company, { cascade: true })
-  configs: CompanyConfig[];
+  @OneToMany(() => CompanyConfig, (config) => config.company, {
+    cascade: true,
+  })
+  configs!: CompanyConfig[];
 }

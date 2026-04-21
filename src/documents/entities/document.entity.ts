@@ -3,52 +3,58 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Generated,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { DocumentType } from '../enums/document-type.enum';
 
 @Entity('documents')
 export class Document {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({ type: 'uuid', unique: true })
-  uuid: string;
+  @Generated('uuid')
+  uuid!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  original_name: string;
+  original_name!: string;
 
   @Column({ type: 'varchar', length: 500 })
-  file_path: string;
+  file_path!: string;
 
   @Column({ type: 'varchar', length: 100 })
-  mime_type: string;
+  mime_type!: string;
 
   @Column({ type: 'bigint' })
-  size: number;
+  size!: number;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  extension: string;
+  extension?: string | null;
 
   @Column({
     type: 'enum',
     enum: DocumentType,
     default: DocumentType.OTHER,
   })
-  document_type: DocumentType;
+  document_type!: DocumentType;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  folder: string;
+  folder?: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  description: string;
+  description?: string | null;
 
   @Column({ type: 'boolean', default: true })
-  is_active: boolean;
+  is_active!: boolean;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
+  updated_at!: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', name: 'deleted_at', nullable: true })
   deleted_at?: Date | null;
 }
