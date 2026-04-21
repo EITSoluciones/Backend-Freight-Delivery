@@ -7,9 +7,8 @@ postgres/
 
 .env
 
-# Logs
-logs
-*.log
+#uploads
+/uploads
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*

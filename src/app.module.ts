@@ -14,6 +14,7 @@ import { ModuleCategoriesModule } from './module-categories/module-categories.mo
 import { ModulesModule } from './modules/modules.module';
 import { CommonModule } from './common/common.module';
 import { DeliveryDriversModule } from './delivery-drivers/delivery-drivers.module';
+import { DeliveryVehiclesModule } from './delivery-vehicles/delivery-vehicles.module';
 import { LogsModule } from './logs/logs.module';
 import { DocumentsModule } from './documents/documents.module';
 import { CompanyModule } from './company/company.module';
@@ -48,6 +49,7 @@ import { AppConfigModule } from './app-config/app-config.module';
     ModuleCategoriesModule,
     ModulesModule,
     DeliveryDriversModule,
+    DeliveryVehiclesModule,
     LogsModule,
     DocumentsModule,
     CompanyModule,

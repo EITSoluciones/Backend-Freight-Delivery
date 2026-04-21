@@ -13,12 +13,15 @@ import { LogsService } from 'src/logs/logs.service';
 import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogAction } from 'src/logs/enums/log-action.enum';
 import { User } from 'src/users/entities/user.entity';
+import { DELIVERY_CATALOGS } from './constants/delivery-catalogs';
 
 @Injectable()
 export class DeliveryDriversService {
   constructor(
     @InjectRepository(DeliveryDriver)
     private readonly deliveryDriverRepository: Repository<DeliveryDriver>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly logsService: LogsService,
   ) {}
 
@@ -26,10 +29,13 @@ export class DeliveryDriversService {
     createDeliveryDriverDto: CreateDeliveryDriverDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<DeliveryDriver>> {
+    await this.validateUser(createDeliveryDriverDto.user_id);
+
     const driver = this.deliveryDriverRepository.create(
       createDeliveryDriverDto,
     );
     const savedDriver = await this.deliveryDriverRepository.save(driver);
+    const createdDriver = await this.getDriverByUuid(savedDriver.uuid);
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_DRIVERS,
@@ -38,15 +44,28 @@ export class DeliveryDriversService {
       entityName: `Driver ${savedDriver.document_number}`,
       description: `Repartidor creado: ${savedDriver.document_number}`,
       newData: {
+        profile: savedDriver.profile,
+        driver_type: savedDriver.driver_type,
+        document_type: savedDriver.document_type,
         document_number: savedDriver.document_number,
+        license_type: savedDriver.license_type,
         phone: savedDriver.phone,
+        status: savedDriver.status,
       },
     });
 
     return new SuccessResponseDto(
       true,
       'Repartidor creado exitosamente!',
-      savedDriver,
+      createdDriver,
+    );
+  }
+
+  getCatalogs() {
+    return new SuccessResponseDto(
+      true,
+      'Catalogos de delivery obtenidos exitosamente!',
+      DELIVERY_CATALOGS,
     );
   }
 
@@ -55,12 +74,18 @@ export class DeliveryDriversService {
   ): Promise<PaginatedResponse<DeliveryDriver>> {
     const { limit = 10, page = 1 } = paginationDto || {};
 
-    const [drivers, total] = await this.deliveryDriverRepository.findAndCount({
-      relations: ['user'],
-      take: limit,
-      skip: (page - 1) * limit,
-      order: { created_at: 'DESC' },
-    });
+    const [drivers, total] = await this.deliveryDriverRepository
+      .createQueryBuilder('driver')
+      .leftJoinAndSelect('driver.user', 'user')
+      .leftJoinAndSelect(
+        'driver.vehicles',
+        'vehicle',
+        'vehicle.deleted_at IS NULL',
+      )
+      .orderBy('driver.created_at', 'DESC')
+      .take(limit)
+      .skip((page - 1) * limit)
+      .getManyAndCount();
 
     return PaginatedResponse.create(
       drivers,
@@ -72,14 +97,7 @@ export class DeliveryDriversService {
   }
 
   async findOne(uuid: string): Promise<SuccessResponseDto<DeliveryDriver>> {
-    const driver = await this.deliveryDriverRepository.findOne({
-      where: { uuid },
-      relations: ['user'],
-    });
-
-    if (!driver) {
-      throw new NotFoundException(`Repartidor con uuid ${uuid} no encontrado!`);
-    }
+    const driver = await this.getDriverByUuid(uuid);
 
     return new SuccessResponseDto(true, 'Repartidor encontrado!', driver);
   }
@@ -89,19 +107,17 @@ export class DeliveryDriversService {
     updateDeliveryDriverDto: UpdateDeliveryDriverDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<DeliveryDriver>> {
-    const driverToUpdate = await this.deliveryDriverRepository.findOne({
-      where: { uuid },
-    });
+    const driverToUpdate = await this.getDriverByUuid(uuid);
 
-    if (!driverToUpdate) {
-      throw new NotFoundException(`Repartidor con uuid ${uuid} no encontrado!`);
+    if (updateDeliveryDriverDto.user_id) {
+      await this.validateUser(updateDeliveryDriverDto.user_id);
     }
 
     const oldData = { ...driverToUpdate };
 
     Object.assign(driverToUpdate, updateDeliveryDriverDto);
-    const updatedDriver =
-      await this.deliveryDriverRepository.save(driverToUpdate);
+    await this.deliveryDriverRepository.save(driverToUpdate);
+    const updatedDriver = await this.getDriverByUuid(uuid);
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_DRIVERS,
@@ -124,13 +140,7 @@ export class DeliveryDriversService {
     uuid: string,
     currentUser?: User,
   ): Promise<SuccessResponseDto<DeliveryDriver>> {
-    const driver = await this.deliveryDriverRepository.findOne({
-      where: { uuid },
-    });
-
-    if (!driver) {
-      throw new NotFoundException(`Repartidor con uuid ${uuid} no encontrado!`);
-    }
+    const driver = await this.getDriverByUuid(uuid);
 
     await this.deliveryDriverRepository.softDelete({ uuid });
 
@@ -148,5 +158,32 @@ export class DeliveryDriversService {
       'Repartidor eliminado exitosamente!',
       driver,
     );
+  }
+
+  private async getDriverByUuid(uuid: string): Promise<DeliveryDriver> {
+    const driver = await this.deliveryDriverRepository
+      .createQueryBuilder('driver')
+      .leftJoinAndSelect('driver.user', 'user')
+      .leftJoinAndSelect(
+        'driver.vehicles',
+        'vehicle',
+        'vehicle.deleted_at IS NULL',
+      )
+      .where('driver.uuid = :uuid', { uuid })
+      .getOne();
+
+    if (!driver) {
+      throw new NotFoundException(`Repartidor con uuid ${uuid} no encontrado!`);
+    }
+
+    return driver;
+  }
+
+  private async validateUser(userId: number): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException(`Usuario con id ${userId} no encontrado!`);
+    }
   }
 }

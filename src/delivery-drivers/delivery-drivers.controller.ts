@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   ParseUUIDPipe,
+  Query,
   UseInterceptors,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { Auth, GetUser } from 'src/auth/decorators';
 import { Permissions } from 'src/auth/interfaces';
 import { User } from 'src/users/entities/user.entity';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @ApiTags('Delivery Drivers')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -43,8 +45,14 @@ export class DeliveryDriversController {
 
   @Get()
   @Auth(Permissions.DeliveryDriversView)
-  findAll() {
-    return this.deliveryDriversService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.deliveryDriversService.findAll(paginationDto);
+  }
+
+  @Get('catalogs')
+  @Auth(Permissions.DeliveryDriversView)
+  findCatalogs() {
+    return this.deliveryDriversService.getCatalogs();
   }
 
   @Get(':uuid')
