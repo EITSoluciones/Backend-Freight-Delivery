@@ -1,6 +1,17 @@
 // src/database/seed.ts
 import { AppDataSource } from './data-source';
-import { seedModuleCategories, seedModules, seedPermissions, seedPlatforms, seedRolePermissions, seedRoles, seedUserPlatforms, seedUserRoles, seedUsers } from './seeds';
+import {
+  seedModuleCategories,
+  seedModules,
+  seedPermissions,
+  seedPlatforms,
+  seedRolePermissions,
+  seedRoles,
+  seedUserPlatforms,
+  seedUserRoles,
+  seedUsers,
+  seedAppConfig,
+} from './seeds';
 
 async function refreshDatabase() {
   await AppDataSource.query('SET FOREIGN_KEY_CHECKS = 0;');
@@ -15,6 +26,7 @@ async function refreshDatabase() {
     'modules',
     'module_categories',
     'platforms',
+    'app_configs',
   ];
 
   for (const table of tables) {
@@ -23,7 +35,6 @@ async function refreshDatabase() {
 
   await AppDataSource.query('SET FOREIGN_KEY_CHECKS = 1;');
 }
-
 
 async function runSeeds() {
   console.log('🌱 Iniciando seeds...');
@@ -43,7 +54,7 @@ async function runSeeds() {
   await seedRolePermissions(AppDataSource);
   await seedUserPlatforms(AppDataSource);
   await seedUserRoles(AppDataSource);
-
+  await seedAppConfig(AppDataSource);
 
   console.log('✅ Seeds ejecutados correctamente');
   process.exit(0);

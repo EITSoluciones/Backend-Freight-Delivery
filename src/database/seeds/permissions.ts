@@ -20,6 +20,16 @@ export async function seedPermissions(dataSource: DataSource) {
   const moduleMap = new Map(modules.map((m) => [m.url, m]));
 
   const permissions: PermissionSeed[] = [
+    // Dashboard
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000001',
+      code: Permissions.DashboardView,
+      name: 'Visualizar Dashboard',
+      description: 'Permite visualizar el dashboard',
+      is_active: true,
+      moduleUrl: '/dashboard',
+    },
+
     // Usuarios
     {
       uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000002',
@@ -209,6 +219,186 @@ export async function seedPermissions(dataSource: DataSource) {
       is_active: true,
       moduleUrl: '/test',
     },
+
+    // Products
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000036',
+      code: Permissions.ProductsView,
+      name: 'Visualizar Productos',
+      description: 'Permite visualizar productos',
+      is_active: true,
+      moduleUrl: '/products',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000037',
+      code: Permissions.ProductsCreate,
+      name: 'Crear Productos',
+      description: 'Permite crear productos',
+      is_active: true,
+      moduleUrl: '/products',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000038',
+      code: Permissions.ProductsUpdate,
+      name: 'Actualizar Productos',
+      description: 'Permite actualizar productos',
+      is_active: true,
+      moduleUrl: '/products',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000039',
+      code: Permissions.ProductsDelete,
+      name: 'Eliminar Productos',
+      description: 'Permite eliminar productos',
+      is_active: true,
+      moduleUrl: '/products',
+    },
+
+    // Delivery Drivers
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000040',
+      code: Permissions.DeliveryDriversView,
+      name: 'Visualizar Repartidores',
+      description: 'Permite visualizar repartidores',
+      is_active: true,
+      moduleUrl: '/delivery-drivers',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000041',
+      code: Permissions.DeliveryDriversCreate,
+      name: 'Crear Repartidores',
+      description: 'Permite crear repartidores',
+      is_active: true,
+      moduleUrl: '/delivery-drivers',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000042',
+      code: Permissions.DeliveryDriversUpdate,
+      name: 'Actualizar Repartidores',
+      description: 'Permite actualizar repartidores',
+      is_active: true,
+      moduleUrl: '/delivery-drivers',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000043',
+      code: Permissions.DeliveryDriversDelete,
+      name: 'Eliminar Repartidores',
+      description: 'Permite eliminar repartidores',
+      is_active: true,
+      moduleUrl: '/delivery-drivers',
+    },
+
+    // Company
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000050',
+      code: Permissions.CompanyView,
+      name: 'Visualizar Empresas',
+      description: 'Permite visualizar empresas',
+      is_active: true,
+      moduleUrl: '/companies',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000051',
+      code: Permissions.CompanyCreate,
+      name: 'Crear Empresas',
+      description: 'Permite crear empresas',
+      is_active: true,
+      moduleUrl: '/companies',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000052',
+      code: Permissions.CompanyUpdate,
+      name: 'Actualizar Empresas',
+      description: 'Permite actualizar empresas',
+      is_active: true,
+      moduleUrl: '/companies',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000053',
+      code: Permissions.CompanyDelete,
+      name: 'Eliminar Empresas',
+      description: 'Permite eliminar empresas',
+      is_active: true,
+      moduleUrl: '/companies',
+    },
+
+    // Addresses
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000060',
+      code: Permissions.AddressesView,
+      name: 'Visualizar Direcciones',
+      description: 'Permite visualizar direcciones',
+      is_active: true,
+      moduleUrl: '/addresses',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000061',
+      code: Permissions.AddressesUpdate,
+      name: 'Actualizar Direcciones',
+      description: 'Permite actualizar direcciones',
+      is_active: true,
+      moduleUrl: '/addresses',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000062',
+      code: Permissions.AddressesDelete,
+      name: 'Eliminar Direcciones',
+      description: 'Permite eliminar direcciones',
+      is_active: true,
+      moduleUrl: '/addresses',
+    },
+
+    // Platforms
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000070',
+      code: Permissions.PlatformsView,
+      name: 'Visualizar Plataformas',
+      description: 'Permite visualizar plataformas',
+      is_active: true,
+      moduleUrl: '/platforms',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000071',
+      code: Permissions.PlatformsCreate,
+      name: 'Crear Plataformas',
+      description: 'Permite crear plataformas',
+      is_active: true,
+      moduleUrl: '/platforms',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000072',
+      code: Permissions.PlatformsUpdate,
+      name: 'Actualizar Plataformas',
+      description: 'Permite actualizar plataformas',
+      is_active: true,
+      moduleUrl: '/platforms',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000073',
+      code: Permissions.PlatformsDelete,
+      name: 'Eliminar Plataformas',
+      description: 'Permite eliminar plataformas',
+      is_active: true,
+      moduleUrl: '/platforms',
+    },
+
+    // App Config
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000080',
+      code: Permissions.AppConfigView,
+      name: 'Visualizar Configuración',
+      description: 'Permite visualizar configuración de la app',
+      is_active: true,
+      moduleUrl: '/app-config',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000082',
+      code: Permissions.AppConfigUpdate,
+      name: 'Actualizar Configuración',
+      description: 'Permite actualizar configuración de la app',
+      is_active: true,
+      moduleUrl: '/app-config',
+    },
   ];
 
   for (const item of permissions) {
@@ -239,6 +429,14 @@ export async function seedPermissions(dataSource: DataSource) {
       await permissionRepo.save(permissionRepo.create(payload));
     }
   }
+
+  await permissionRepo
+    .createQueryBuilder()
+    .softDelete()
+    .where('code IN (:...codes)', {
+      codes: ['appconfig:create', 'appconfig:delete'],
+    })
+    .execute();
 
   console.log('✔ Permissions sembrados');
 }

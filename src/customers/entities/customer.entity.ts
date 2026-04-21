@@ -14,57 +14,57 @@ import { v4 as uuidv4 } from 'uuid';
 @Entity('customers')
 export class Customer {
   @PrimaryGeneratedColumn('increment')
-  id: number;
+  id!: number;
 
   @Column({
     type: 'uuid',
     unique: true,
   })
-  uuid: string;
+  uuid!: string;
 
   @Column({
     type: 'varchar',
     length: 50,
     unique: true,
   })
-  code: string;
+  code!: string;
 
   @Column({
     type: 'varchar',
     length: 255,
   })
-  name: string;
+  name!: string;
 
   @Column({
     type: 'varchar',
     length: 255,
     unique: true,
   })
-  email: string;
+  email!: string;
 
   @Column({
     type: 'varchar',
     length: 25,
     nullable: true,
   })
-  phone: string;
+  phone?: string | null;
 
   @Column('bool', {
     default: true,
   })
-  is_active: boolean;
+  is_active!: boolean;
 
   @CreateDateColumn({
     type: 'timestamp',
     name: 'created_at',
   })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({
     type: 'timestamp',
     name: 'updated_at',
   })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({
     name: 'deleted_at',
@@ -74,9 +74,8 @@ export class Customer {
 
   @OneToMany(() => Address, (address) => address.customer, {
     cascade: true,
-    eager: true,
   })
-  addresses: Address[];
+  addresses!: Address[];
 
   @BeforeInsert()
   generateUuid() {

@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, UseGuards, Req, Headers, SetMetadata } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
+  UseGuards,
+  Req,
+  Headers,
+  SetMetadata,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -19,7 +32,7 @@ import { RequestRefreshTokenDto } from './dto/request-refresh-token.dto';
   version: '1',
 })
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   // Login
   @Post('login')
@@ -32,13 +45,18 @@ export class AuthController {
   @Post('login-refresh-token')
   @HttpCode(200)
   loginTokenRefresh(@Body() RequestRefreshTokenDto: RequestRefreshTokenDto) {
-    return  this.authService.refreshAccessToken(RequestRefreshTokenDto.refresh_token);
+    return this.authService.refreshAccessToken(
+      RequestRefreshTokenDto.refresh_token,
+    );
   }
 
   //logout refreshToken
-  @Post('revoke-refresh-token') @HttpCode(200)
+  @Post('revoke-refresh-token')
+  @HttpCode(200)
   revokeToken(@Body() RequestRefreshTokenDto: RequestRefreshTokenDto) {
-    return  this.authService.revokeRefreshToken(RequestRefreshTokenDto.refresh_token);
+    return this.authService.revokeRefreshToken(
+      RequestRefreshTokenDto.refresh_token,
+    );
   }
 
   @Get('private')
@@ -50,28 +68,26 @@ export class AuthController {
     @RawHeaders() rawHeaders: string[],
     @Headers() headers: IncomingHttpHeaders,
   ) {
-
     return {
       ok: true,
       message: 'success',
       user,
       userEmail,
       rawHeaders,
-      headers
-    }
-
+      headers,
+    };
   }
 
   @Get('test')
   @Auth(Permissions.Test)
-  privateRoute2(
-    @GetUser() user: User,
-  ) {
+  privateRoute2(@GetUser() user: User) {
     return {
       ok: true,
-      user
-    }
+      user,
+      roles: user.roles,
+      permissions: user.roles.flatMap((role) =>
+        (role.permissions || []).map((p) => p.code),
+      ),
+    };
   }
-
-
 }

@@ -17,6 +17,9 @@ import { QueryCustomerDto } from './dto/query-customer.dto';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { Auth, GetUser } from 'src/auth/decorators';
+import { Permissions } from 'src/auth/interfaces';
+import { User } from 'src/users/entities/user.entity';
 
 @ApiTags('Customers')
 @Controller({
@@ -30,38 +33,56 @@ export class CustomersController {
   ) {}
 
   @Post()
-  create(@Body() createCustomerDto: CreateCustomerDto) {
-    return this.customersService.create(createCustomerDto);
+  @Auth(Permissions.CustomersCreate)
+  create(
+    @Body() createCustomerDto: CreateCustomerDto,
+    @GetUser() currentUser: User,
+  ) {
+    return this.customersService.create(createCustomerDto, currentUser);
   }
 
   @Get()
+  @Auth(Permissions.CustomersView)
   findAll(@Query() queryCustomerDto: QueryCustomerDto) {
     return this.customersService.findAll(queryCustomerDto);
   }
 
   @Get(':uuid')
+  @Auth(Permissions.CustomersView)
   findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return this.customersService.findOne(uuid);
   }
 
   @Patch(':uuid')
+  @Auth(Permissions.CustomersUpdate)
   update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateCustomerDto: UpdateCustomerDto,
+    @GetUser() currentUser: User,
   ) {
-    return this.customersService.update(uuid, updateCustomerDto);
+    return this.customersService.update(uuid, updateCustomerDto, currentUser);
   }
 
   @Delete(':uuid')
-  remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.customersService.remove(uuid);
+  @Auth(Permissions.CustomersDelete)
+  remove(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @GetUser() currentUser: User,
+  ) {
+    return this.customersService.remove(uuid, currentUser);
   }
 
   @Post(':uuid/addresses')
+  @Auth(Permissions.CustomersUpdate)
   addAddress(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() createAddressDto: CreateAddressDto,
+    @GetUser() currentUser: User,
   ) {
-   return this.addressesService.addAddressToCustomer(uuid, createAddressDto);
+    return this.addressesService.addAddressToCustomer(
+      uuid,
+      createAddressDto,
+      currentUser,
+    );
   }
 }

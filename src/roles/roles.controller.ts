@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ClassSerializerInterceptor, UseInterceptors, Query, ParseUUIDPipe, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ClassSerializerInterceptor,
+  UseInterceptors,
+  Query,
+  ParseUUIDPipe,
+  Put,
+} from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
@@ -12,9 +25,8 @@ import { UpdateRolePermissionsDto } from './dto/update-role-permissions.dto';
   path: 'roles',
   version: '1',
 })
-
 export class RolesController {
-  constructor(private readonly rolesService: RolesService) { }
+  constructor(private readonly rolesService: RolesService) {}
 
   /** Obtener Catálogo de Permisos */
   @Get('permissions')
@@ -36,10 +48,14 @@ export class RolesController {
   updatePermissionsByRole(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateRolePermissionsDto: UpdateRolePermissionsDto,
+    @GetUser() currentUser: User,
   ) {
-    return this.rolesService.updatePermissionsByRole(uuid, updateRolePermissionsDto);
+    return this.rolesService.updatePermissionsByRole(
+      uuid,
+      updateRolePermissionsDto,
+      currentUser,
+    );
   }
-
 
   /** Obtener Catálogo de Roles */
   @Get('catalog')
@@ -58,8 +74,8 @@ export class RolesController {
   /** Crear Rol */
   @Post()
   @Auth()
-  create(@Body() CreateRoleDto: CreateRoleDto) {
-    return this.rolesService.create(CreateRoleDto);
+  create(@Body() CreateRoleDto: CreateRoleDto, @GetUser() currentUser: User) {
+    return this.rolesService.create(CreateRoleDto, currentUser);
   }
 
   /** Obtener Roles */
@@ -82,17 +98,18 @@ export class RolesController {
   update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateRoleDto: UpdateRoleDto,
+    @GetUser() currentUser: User,
   ) {
-    return this.rolesService.update(uuid, updateRoleDto);
+    return this.rolesService.update(uuid, updateRoleDto, currentUser);
   }
 
   /** Eliminar Rol */
   @Delete(':uuid')
   @Auth()
-  remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.rolesService.remove(uuid);
+  remove(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @GetUser() currentUser: User,
+  ) {
+    return this.rolesService.remove(uuid, currentUser);
   }
-
-
-
 }
