@@ -29,7 +29,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 export class DeliveryDriversController {
   constructor(
     private readonly deliveryDriversService: DeliveryDriversService,
-  ) {}
+  ) { }
 
   @Post()
   @Auth(Permissions.DeliveryDriversCreate)
@@ -49,12 +49,13 @@ export class DeliveryDriversController {
     return this.deliveryDriversService.findAll(paginationDto);
   }
 
+
+
   @Get('catalogs')
   @Auth(Permissions.DeliveryDriversView)
-  findCatalogs() {
-    return this.deliveryDriversService.getCatalogs();
+  getCatalogsDriverByType(@Query('type') type?: string) {
+    return this.deliveryDriversService.getCatalogs(type);
   }
-
   @Get(':uuid')
   @Auth(Permissions.DeliveryDriversView)
   findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {

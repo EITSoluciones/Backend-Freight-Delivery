@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   PaginatedResponse,
   SuccessResponseDto,
 } from 'src/common/dto/success-response.dto';
+import { DeliveryCatalog } from 'src/delivery-catalogs/entities/delivery-catalog.entity';
 import { DeliveryDriver } from 'src/delivery-drivers/entities/delivery-driver.entity';
 import { LogsService } from 'src/logs/logs.service';
 import { LogAction } from 'src/logs/enums/log-action.enum';
@@ -22,6 +23,8 @@ export class DeliveryVehiclesService {
     private readonly deliveryVehicleRepository: Repository<DeliveryVehicle>,
     @InjectRepository(DeliveryDriver)
     private readonly deliveryDriverRepository: Repository<DeliveryDriver>,
+    @InjectRepository(DeliveryCatalog)
+    private readonly deliveryCatalogRepository: Repository<DeliveryCatalog>,
     private readonly logsService: LogsService,
   ) {}
 
@@ -31,6 +34,7 @@ export class DeliveryVehiclesService {
   ): Promise<SuccessResponseDto<DeliveryVehicle>> {
     const { delivery_driver_uuid, ...vehicleData } = createDeliveryVehicleDto;
     const driver = await this.getDriverByUuid(delivery_driver_uuid);
+    await this.validateCatalogSelections(createDeliveryVehicleDto);
 
     const isPrimary = await this.resolvePrimaryFlag(
       driver.id,
@@ -120,6 +124,7 @@ export class DeliveryVehiclesService {
     const vehicle = await this.getVehicleByUuid(uuid);
     const oldData = { ...vehicle };
     const oldDriverId = vehicle.delivery_driver_id;
+    await this.validateCatalogSelections(updateDeliveryVehicleDto);
 
     let targetDriverId = vehicle.delivery_driver_id;
 
@@ -303,5 +308,35 @@ export class DeliveryVehiclesService {
 
     nextPrimary.is_primary = true;
     await this.deliveryVehicleRepository.save(nextPrimary);
+  }
+
+  private async validateCatalogSelections(
+    payload: Partial<CreateDeliveryVehicleDto>,
+  ): Promise<void> {
+    await this.validateCatalogValue('vehicle_type', payload.vehicle_type);
+    await this.validateCatalogValue('vehicle_status', payload.status);
+  }
+
+  private async validateCatalogValue(
+    category: string,
+    code?: string,
+  ): Promise<void> {
+    if (!code) {
+      return;
+    }
+
+    const exists = await this.deliveryCatalogRepository.findOne({
+      where: {
+        category,
+        code,
+        is_active: true,
+      },
+    });
+
+    if (!exists) {
+      throw new BadRequestException(
+        `El valor ${code} no existe en el catalogo ${category}`,
+      );
+    }
   }
 }

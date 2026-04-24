@@ -16,5 +16,6 @@ import { LogsModule } from 'src/logs/logs.module';
     AuthModule,
     LogsModule,
   ],
+  exports: [UsersService],
 })
-export class UsersModule {}
+export class UsersModule { }
