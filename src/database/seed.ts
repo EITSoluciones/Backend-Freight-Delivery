@@ -11,6 +11,7 @@ import {
   seedUserRoles,
   seedUsers,
   seedAppConfig,
+  seedDeliveryCatalogs,
 } from './seeds';
 
 async function refreshDatabase() {
@@ -27,6 +28,7 @@ async function refreshDatabase() {
     'module_categories',
     'platforms',
     'app_configs',
+    'delivery_catalogs',
   ];
 
   for (const table of tables) {
@@ -55,6 +57,7 @@ async function runSeeds() {
   await seedUserPlatforms(AppDataSource);
   await seedUserRoles(AppDataSource);
   await seedAppConfig(AppDataSource);
+  await seedDeliveryCatalogs(AppDataSource);
 
   console.log('✅ Seeds ejecutados correctamente');
   process.exit(0);

@@ -27,7 +27,7 @@ import { User } from './entities/user.entity';
   version: '1',
 })
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get('search')
   searchUsers(
@@ -72,5 +72,14 @@ export class UsersController {
     @GetUser() currentUser: User,
   ) {
     return this.usersService.remove(uuid, currentUser);
+  }
+
+
+  @Get('by-role/:roleCode')
+  @Auth()
+  getUsersWithRoleDelivery(
+    @Param('roleCode') roleCode: string,
+  ) {
+    return this.usersService.getUsersByRole(roleCode);
   }
 }

@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
-  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -11,10 +10,6 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import {
-  DELIVERY_VEHICLE_STATUS_CODES,
-  DELIVERY_VEHICLE_TYPE_CODES,
-} from 'src/delivery-drivers/constants/delivery-catalogs';
 
 export class CreateDeliveryVehicleDto {
   @ApiProperty({ example: '0f4e8f7b-8f4f-469d-9fea-f64a0e7db7e9' })
@@ -49,7 +44,6 @@ export class CreateDeliveryVehicleDto {
   @ApiProperty({ example: 'car' })
   @IsNotEmpty()
   @IsString()
-  @IsIn(DELIVERY_VEHICLE_TYPE_CODES)
   vehicle_type: string;
 
   @ApiPropertyOptional({ example: 'Blanco' })
@@ -68,7 +62,6 @@ export class CreateDeliveryVehicleDto {
   @ApiPropertyOptional({ example: 'active' })
   @IsOptional()
   @IsString()
-  @IsIn(DELIVERY_VEHICLE_STATUS_CODES)
   status?: string;
 
   @ApiPropertyOptional({ example: true })

@@ -304,4 +304,21 @@ export class RolesService {
       this.dbErrorHandler.handleDBErrors(error);
     }
   }
+
+  async UsersByRole(uuid: string): Promise<SuccessResponseDto<User[]>> {
+    const role = await this.roleRepository.findOne({
+      where: { uuid },
+      relations: ['users'],
+    });
+
+    if (!role) {
+      throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
+    }
+    
+    return new SuccessResponseDto(
+      true,
+      'Usuarios obtenidos exitosamente!',
+      role.users,
+    );
+  }
 }

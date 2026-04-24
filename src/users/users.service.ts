@@ -31,7 +31,7 @@ export class UsersService {
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
     private readonly logsService: LogsService,
-  ) {}
+  ) { }
 
   /** Crear Usuario */
   async create(
@@ -115,6 +115,29 @@ export class UsersService {
 
     return new SuccessResponseDto(true, 'Usuario Encontrado!', user);
   }
+
+  async getUsersByRole(roles: string): Promise<SuccessResponseDto<User[]>> {
+    const users = await this.userRepository.find({
+      where: {
+        is_active: true,
+        roles: {
+          code: roles,
+          is_active: true,
+        },
+      },
+      relations: ['roles'],
+      order: {
+        username: 'ASC',
+      },
+    });
+
+    return new SuccessResponseDto(
+      true,
+      'Usuarios obtenidos exitosamente!',
+      users,
+    );
+  }
+
 
   /** Actualizar Parcialmente Usuario */
   async partialUpdate(
@@ -239,6 +262,7 @@ export class UsersService {
     return rolesIds;
   }
 
+
   private handleDBErrors(error: any): never {
     if (error instanceof NotFoundException) throw error;
 
@@ -246,8 +270,8 @@ export class UsersService {
       if ((error as any).errno === 1062) {
         throw new BadRequestException(
           (error as any).detail ||
-            (error as any).sqlMessage ||
-            'Registro Duplicado',
+          (error as any).sqlMessage ||
+          'Registro Duplicado',
         );
       }
     }

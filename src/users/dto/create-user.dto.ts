@@ -5,11 +5,11 @@ export class CreateUserDto {
 
     @IsNotEmpty({ message: 'Username es obligatorio.' })
     @IsString()
-    username: string;
+    username?: string;
 
     @IsNotEmpty({ message: 'Email es obligatorio' })
     @IsEmail({}, { message: 'Email inválido' })
-    email: string;
+    email?: string;
 
     @IsNotEmpty({ message: 'La contraseña es obligatorio' })
     @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
@@ -18,7 +18,7 @@ export class CreateUserDto {
         /(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
         message: 'La contraseña debe contener mayúscula, minúscula y al menos un número o carácter especial'
     })
-    password: string;
+    password!: string;
 
     @IsOptional()
     @IsString()
@@ -31,11 +31,11 @@ export class CreateUserDto {
     @ArrayNotEmpty()
     @ArrayUnique()
     @IsString({ each: true })
-    platforms: string[];
+    platforms!: string[];
 
     @ArrayNotEmpty()
     @ArrayUnique()
     @IsString({ each: true })
-    roles: string[];
+    roles!: string[];
 
 }

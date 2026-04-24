@@ -8,8 +8,8 @@ import {
   DeleteDateColumn,
   Entity,
   JoinColumn,
-  ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -25,11 +25,8 @@ export class DeliveryDriver {
   uuid!: string;
 
   @Exclude()
-  @Column({ type: 'int', name: 'user_id' })
+  @Column({ type: 'int', name: 'user_id', unique: true })
   user_id!: number;
-
-  @Column({ length: 50, default: 'default' })
-  profile!: string;
 
   @Column({ length: 20 })
   phone!: string;
@@ -37,11 +34,14 @@ export class DeliveryDriver {
   @Column({ name: 'driver_type', length: 20 })
   driver_type!: string;
 
-  @Column({ name: 'document_type', length: 30 })
-  document_type!: string;
+  @Column({ name: 'profile_photo', length: 255, nullable: true })
+  profile_photo?: string;
 
-  @Column({ name: 'document_number', length: 50 })
-  document_number!: string;
+  @Column({ name: 'identity_document_type', length: 30 })
+  identity_document_type!: string;
+
+  @Column({ name: 'identity_document_number', length: 50 })
+  identity_document_number!: string;
 
   @Column({ name: 'license_type', length: 30 })
   license_type!: string;
@@ -52,8 +52,10 @@ export class DeliveryDriver {
   @Column({ name: 'license_expiration', type: 'date' })
   license_expiration!: Date;
 
-  @Column({ length: 20, default: 'active' })
-  status!: string;
+  @Column('bool', {
+    default: true,
+  })
+  is_active!: boolean;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   created_at!: Date;
@@ -64,7 +66,7 @@ export class DeliveryDriver {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deleted_at?: Date | null;
 
-  @ManyToOne(() => User)
+  @OneToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
