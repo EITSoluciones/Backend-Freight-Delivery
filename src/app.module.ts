@@ -19,6 +19,7 @@ import { LogsModule } from './logs/logs.module';
 import { DocumentsModule } from './documents/documents.module';
 import { CompanyModule } from './company/company.module';
 import { AppConfigModule } from './app-config/app-config.module';
+import { SmsModule } from './sms/sms.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AppConfigModule } from './app-config/app-config.module';
     DocumentsModule,
     CompanyModule,
     AppConfigModule,
+    SmsModule
   ],
   controllers: [AppController],
   providers: [AppService],
