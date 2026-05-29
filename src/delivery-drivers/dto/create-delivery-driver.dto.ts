@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 
 export class CreateDeliveryDriverDto {
-  @ApiProperty({ example: 1 })
+  @ApiProperty({ example: '0f4e8f7b-8f4f-469d-9fea-f64a0e7db7e9' })
   @IsNotEmpty()
   @IsUUID()
   user_uuid!: string;
@@ -57,4 +57,4 @@ export class CreateDeliveryDriverDto {
   @IsNotEmpty()
   @IsBoolean()
   is_active!: boolean;
-  }
+}
