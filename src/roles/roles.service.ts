@@ -268,13 +268,13 @@ export class RolesService {
       const oldPermissions = role.permissions.map((p) => p.uuid);
 
       const permissions = await this.permissionRepository.findBy({
-        uuid: In(updateRolePermissionsDto.permissionUuids),
+        uuid: In(updateRolePermissionsDto.permission_uuids),
         is_active: true,
       });
 
       if (
         permissions.length !==
-        new Set(updateRolePermissionsDto.permissionUuids).size
+        new Set(updateRolePermissionsDto.permission_uuids).size
       ) {
         throw new BadRequestException(
           'Uno o más permisos no existen o están inactivos',
@@ -292,7 +292,7 @@ export class RolesService {
         entityName: role.name,
         description: `Permisos actualizados para rol: ${role.name}`,
         oldData: { permissions: oldPermissions },
-        newData: { permissions: updateRolePermissionsDto.permissionUuids },
+        newData: { permissions: updateRolePermissionsDto.permission_uuids },
       });
 
       return new SuccessResponseDto(

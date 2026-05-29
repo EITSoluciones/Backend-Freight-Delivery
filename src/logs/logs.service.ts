@@ -139,21 +139,21 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async findAll(queryLogDto: QueryLogDto): Promise<PaginatedResponse<SystemLog>> {
-    const { limit = 10, page = 1, module, action, userUuid, entityUuid, startDate, endDate } = queryLogDto;
+    const { limit = 10, page = 1, module, action, user_uuid, entity_uuid, start_date, end_date } = queryLogDto;
 
     const where: FindOptionsWhere<SystemLog> = {};
 
     if (module) where.module = module;
     if (action) where.action = action;
-    if (userUuid) where.userUuid = userUuid;
-    if (entityUuid) where.entityUuid = entityUuid;
+    if (user_uuid) where.userUuid = user_uuid;
+    if (entity_uuid) where.entityUuid = entity_uuid;
 
-    if (startDate && endDate) {
-      where.createdAt = Between(new Date(startDate), new Date(endDate));
-    } else if (startDate) {
-      where.createdAt = MoreThanOrEqual(new Date(startDate));
-    } else if (endDate) {
-      where.createdAt = LessThanOrEqual(new Date(endDate));
+    if (start_date && end_date) {
+      where.createdAt = Between(new Date(start_date), new Date(end_date));
+    } else if (start_date) {
+      where.createdAt = MoreThanOrEqual(new Date(start_date));
+    } else if (end_date) {
+      where.createdAt = LessThanOrEqual(new Date(end_date));
     }
 
     const [logs, total] = await this.logRepository.findAndCount({

@@ -36,7 +36,7 @@ import { SmsModule } from './sms/sms.module';
       password: process.env.DB_PASSWORD,
       autoLoadEntities: process.env.DB_AUTOLOAD === 'true',
       synchronize: process.env.DB_SYNCHRONIZE === 'true',
-      logging: process.env.DB_LOGGING === 'true',
+      logging: ['error', 'warn'],
     }),
 
     CommonModule,
@@ -60,4 +60,4 @@ import { SmsModule } from './sms/sms.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

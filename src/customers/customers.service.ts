@@ -80,12 +80,12 @@ export class CustomersService {
   async findAll(
     queryCustomerDto: QueryCustomerDto,
   ): Promise<PaginatedResponse<Customer>> {
-    const { limit = 10, page = 1, startDate, endDate } = queryCustomerDto;
+    const { limit = 10, page = 1, start_date, end_date } = queryCustomerDto;
 
     const where: FindManyOptions<Customer>['where'] = {};
 
-    if (startDate && endDate) {
-      where.created_at = Between(new Date(startDate), new Date(endDate));
+    if (start_date && end_date) {
+      where.created_at = Between(new Date(start_date), new Date(end_date));
     }
 
     const [customers, total] = await this.customerRepository.findAndCount({

@@ -4,7 +4,7 @@ export class CreateModuleCategoryDto {
 
     @IsNotEmpty({ message: 'El nombre es obligatorio.' })
     @IsString()
-    name: string;
+    name!: string;
 
     @IsOptional()
     @IsString()

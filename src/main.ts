@@ -59,7 +59,7 @@ async function bootstrap() {
   logger.log(`🚀 ${process.env.APP_NAME} running in ${process.env.NODE_ENV} mode`);
   logger.log(`📡 Server: ${process.env.APP_URL}`);
   logger.log(`🔗 API: ${process.env.APP_URL}/${process.env.API_PREFIX}${process.env.API_VERSION}`);
-  logger.log(`🌐 CORS enabled for: ${process.env.CORS_ORIGIN}`);
+  logger.log(`🌐 CORS enabled for: ${process.env.CORS_ORIGINS}`);
 
 }
 bootstrap();

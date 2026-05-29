@@ -18,27 +18,27 @@ export class CreateCustomerDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  code: string;
+  code!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @IsEmail()
   @IsNotEmpty()
   @MaxLength(255)
-  email: string;
+  email!: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(25)
-  phone ? : string;
+  phone?: string;
 
   @IsArray()
   @ValidateNested({
     each: true
   })
   @Type(() => CreateAddressDto)
-  addresses: CreateAddressDto[];
+  addresses!: CreateAddressDto[];
 }

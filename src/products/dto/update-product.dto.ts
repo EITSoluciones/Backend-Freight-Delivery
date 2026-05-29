@@ -1,20 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { PartialType } from '@nestjs/swagger';
+import { CreateProductDto } from './create-product.dto';
 
-export class UpdateProductDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  nombre?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  descripcion?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  stock?: number;
-}
+export class UpdateProductDto extends PartialType(CreateProductDto) {}

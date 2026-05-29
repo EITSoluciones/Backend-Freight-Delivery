@@ -5,12 +5,12 @@ export class CreateRoleDto {
     @IsNotEmpty({ message: 'El Código es obligatorio.' })
     @IsString()
     @MaxLength(50)
-    code: string;
+    code!: string;
 
     @IsNotEmpty({ message: 'El nombre es obligatorio.' })
     @IsString()
     @MaxLength(100)
-    name: string;
+    name!: string;
 
     @IsOptional()
     @IsString()

@@ -1,16 +1,10 @@
-import { IsOptional, IsString, MaxLength, IsBoolean } from 'class-validator';
+import { OmitType, PartialType } from '@nestjs/swagger';
+import { IsBoolean, IsOptional } from 'class-validator';
+import { CreateRoleDto } from './create-role.dto';
 
-export class UpdateRoleDto {
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  description?: string;
-
+export class UpdateRoleDto extends PartialType(
+  OmitType(CreateRoleDto, ['code'] as const),
+) {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;

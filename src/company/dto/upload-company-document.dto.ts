@@ -5,7 +5,7 @@ import { DocumentType } from '../../documents/enums/document-type.enum';
 export class UploadCompanyDocumentDto {
   @ApiProperty({ enum: DocumentType, description: 'Tipo de documento' })
   @IsEnum(DocumentType)
-  document_type: DocumentType;
+  document_type!: DocumentType;
 
   @ApiPropertyOptional({ description: 'Si es el documento por defecto' })
   @IsOptional()

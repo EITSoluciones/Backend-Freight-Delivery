@@ -1,14 +1,5 @@
-import {
-  IsOptional,
-  IsBoolean,
-  IsDateString
-} from 'class-validator';
-import {
-  PaginationDto
-} from 'src/common/dto/pagination.dto';
-import {
-  Transform
-} from 'class-transformer';
+import { IsDateString, IsOptional } from 'class-validator';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 export class QueryCustomerDto extends PaginationDto {
 
@@ -17,9 +8,9 @@ export class QueryCustomerDto extends PaginationDto {
 
   @IsOptional()
   @IsDateString()
-  startDate?: string;
+  start_date?: string;
 
   @IsOptional()
   @IsDateString()
-  endDate?: string;
+  end_date?: string;
 }

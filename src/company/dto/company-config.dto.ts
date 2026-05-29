@@ -1,11 +1,11 @@
 import { IsString, IsOptional, MaxLength } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
 
 export class CreateCompanyConfigDto {
   @ApiProperty({ example: 'theme_color' })
   @IsString()
   @MaxLength(100)
-  key: string;
+  key!: string;
 
   @ApiPropertyOptional({ example: '#000000' })
   @IsOptional()
@@ -23,19 +23,6 @@ export class CreateCompanyConfigDto {
   description?: string;
 }
 
-export class UpdateCompanyConfigDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  value?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  type?: string;
-}
+export class UpdateCompanyConfigDto extends PartialType(
+  OmitType(CreateCompanyConfigDto, ['key'] as const),
+) {}

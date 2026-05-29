@@ -4,7 +4,7 @@ import { IsEmail, IsString, Matches, MaxLength, MinLength } from "class-validato
 export class LoginUserDto {
 
     @IsString()
-    username: string;
+    username!: string;
 
     @IsString()
     @MinLength(6)
@@ -13,10 +13,10 @@ export class LoginUserDto {
         /(?:(?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
         message: 'The password must have a Uppercase, lowercase letter and a number'
     })
-    password: string;
+    password!: string;
 
     @IsString()
     @MaxLength(100)
-    platform: string;
+    platform!: string;
 
 }

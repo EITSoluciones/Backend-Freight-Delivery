@@ -3,30 +3,30 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PaginationMeta {
   @ApiProperty()
-  pageNumber: number;
+  page_number!: number;
 
   @ApiProperty()
-  totalPages: number;
+  total_pages!: number;
 
   @ApiProperty()
-  totalCount: number;
+  total_count!: number;
 
   @ApiProperty()
-  hasPreviousPage: boolean;
+  has_previous_page!: boolean;
 
   @ApiProperty()
-  hasNextPage: boolean;
+  has_next_page!: boolean;
 }
 
 export class SuccessResponseDto<T> {
   @ApiProperty({ example: true })
-  success: boolean;
+  success!: boolean;
 
   @ApiProperty({ example: 'Operación exitosa' })
-  message: string;
+  message!: string;
 
   @ApiProperty()
-  data: T;
+  data!: T;
 
   @ApiPropertyOptional({ type: PaginationMeta })
   pagination?: PaginationMeta;
@@ -47,10 +47,10 @@ export class SuccessResponseDto<T> {
 }
 
 export class PaginatedResponse<T> {
-  success: boolean;
-  message: string;
-  data: T[];
-  pagination: PaginationMeta;
+  success!: boolean;
+  message!: string;
+  data!: T[];
+  pagination!: PaginationMeta;
 
   static create<T>(
     data: T[],
@@ -64,11 +64,11 @@ export class PaginatedResponse<T> {
       message,
       data,
       pagination: {
-        pageNumber: page,
-        totalPages: Math.ceil(total / limit),
-        totalCount: total,
-        hasPreviousPage: page > 1,
-        hasNextPage: total > page * limit,
+        page_number: page,
+        total_pages: Math.ceil(total / limit),
+        total_count: total,
+        has_previous_page: page > 1,
+        has_next_page: total > page * limit,
       },
     };
   }
