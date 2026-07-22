@@ -195,6 +195,7 @@ export class RolesService {
           categoryEntry.items.set(module.uuid, {
             icon: module.icon,
             name: module.name,
+            description: module.description,
             route: module.url,
             active: module.is_active,
           });
