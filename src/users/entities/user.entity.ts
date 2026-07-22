@@ -1,6 +1,7 @@
 import { Exclude } from 'class-transformer';
 import { Platform } from 'src/platforms/entities/platform.entity';
 import { Role } from 'src/roles/entities/role.entity';
+import { UserRole } from './user-role.entity';
 import {
   BeforeInsert,
   BeforeUpdate,
@@ -10,6 +11,7 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -72,12 +74,9 @@ export class User {
   })
   platforms!: Platform[];
 
-  @ManyToMany(() => Role, (role) => role.users)
-  @JoinTable({
-    name: 'user_roles',
-    joinColumn: { name: 'user_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'role_id', referencedColumnName: 'id' },
-  })
+  @OneToMany(() => UserRole, (userRole) => userRole.user)
+  user_roles!: UserRole[];
+
   roles!: Role[];
 
   @BeforeInsert()

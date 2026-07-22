@@ -10,7 +10,7 @@ import {
 // Eliminamos índices individuales innecesarios si ya están en el compuesto
 @Index(['userUuid'])
 @Index(['createdAt'])
-@Index(['userUuid', 'module', 'action']) 
+@Index(['userUuid', 'module', 'action'])
 export class SystemLog {
   @PrimaryGeneratedColumn('increment')
   id!: number;
@@ -38,7 +38,7 @@ export class SystemLog {
 
   @Column({ type: 'json', nullable: true })
   oldData?: Record<string, any> | null;
-  
+
   @Column({ type: 'json', nullable: true })
   newData?: Record<string, any> | null;
 

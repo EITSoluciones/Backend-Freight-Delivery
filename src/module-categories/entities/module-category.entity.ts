@@ -24,7 +24,7 @@ export class ModuleCategory {
 
   @Column({ type: 'text', nullable: true })
   description!: string | null;
-  
+
   @Column({ default: true })
   is_active!: boolean;
 

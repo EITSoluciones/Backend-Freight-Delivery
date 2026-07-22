@@ -1,6 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -13,12 +11,12 @@ import { LogsService } from 'src/logs/logs.service';
 import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogAction } from 'src/logs/enums/log-action.enum';
 import { User } from 'src/users/entities/user.entity';
+import { ProductsRepository } from './repositories/products.repository';
 
 @Injectable()
 export class ProductsService {
   constructor(
-    @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
+    private readonly productsRepository: ProductsRepository,
     private readonly logsService: LogsService,
   ) {}
 
@@ -26,8 +24,8 @@ export class ProductsService {
     createProductDto: CreateProductDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Product>> {
-    const product = this.productRepository.create(createProductDto);
-    const savedProduct = await this.productRepository.save(product);
+    const product = this.productsRepository.create(createProductDto);
+    const savedProduct = await this.productsRepository.save(product);
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.PRODUCTS,
@@ -50,19 +48,8 @@ export class ProductsService {
   ): Promise<PaginatedResponse<Product>> {
     const { limit = 10, page = 1, is_active } = paginationDto;
 
-    const bool = is_active === 'true';
-
-    const where: any = {};
-    if (bool !== undefined) {
-      where.is_active = bool;
-    }
-
-    const [products, total] = await this.productRepository.findAndCount({
-      where,
-      take: limit,
-      skip: (page - 1) * limit,
-      order: { createdAt: 'DESC' },
-    });
+    const [products, total] =
+      await this.productsRepository.findAll(paginationDto);
 
     return PaginatedResponse.create(
       products,
@@ -74,7 +61,7 @@ export class ProductsService {
   }
 
   async findOne(uuid: string): Promise<SuccessResponseDto<Product>> {
-    const product = await this.productRepository.findOne({ where: { uuid } });
+    const product = await this.productsRepository.findByUuid(uuid);
 
     if (!product) {
       throw new NotFoundException(`Producto con uuid ${uuid} no encontrado!`);
@@ -88,9 +75,7 @@ export class ProductsService {
     updateProductDto: UpdateProductDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Product>> {
-    const productToUpdate = await this.productRepository.findOne({
-      where: { uuid },
-    });
+    const productToUpdate = await this.productsRepository.findByUuid(uuid);
 
     if (!productToUpdate) {
       throw new NotFoundException(`Producto con uuid ${uuid} no encontrado!`);
@@ -99,7 +84,7 @@ export class ProductsService {
     const oldData = { ...productToUpdate };
 
     Object.assign(productToUpdate, updateProductDto);
-    const updatedProduct = await this.productRepository.save(productToUpdate);
+    const updatedProduct = await this.productsRepository.save(productToUpdate);
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.PRODUCTS,
@@ -122,13 +107,13 @@ export class ProductsService {
     uuid: string,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Product>> {
-    const product = await this.productRepository.findOne({ where: { uuid } });
+    const product = await this.productsRepository.findByUuid(uuid);
 
     if (!product) {
       throw new NotFoundException(`Producto con uuid ${uuid} no encontrado!`);
     }
 
-    await this.productRepository.softDelete({ uuid });
+    await this.productsRepository.softDeleteByUuid(uuid);
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.PRODUCTS,

@@ -1,7 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, LessThanOrEqual, MoreThanOrEqual, FindOptionsWhere } from 'typeorm';
 import { SystemLog } from './entities/system-log.entity';
 import { QueryLogDto } from '../common/dto/query-log.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -9,6 +7,7 @@ import { PaginatedResponse } from '../common/dto/success-response.dto';
 import { LogData } from './interfaces/log-data.interface';
 import { User } from '../users/entities/user.entity';
 import { LOG_EVENT, LogEventPayload } from './events/log.event';
+import { LogsRepository } from './repositories/logs.repository';
 
 @Injectable()
 export class LogsService implements OnModuleInit, OnModuleDestroy {
@@ -18,8 +17,7 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
   private flushInterval: NodeJS.Timeout | null = null;
 
   constructor(
-    @InjectRepository(SystemLog)
-    private readonly logRepository: Repository<SystemLog>,
+    private readonly logsRepository: LogsRepository,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -38,13 +36,21 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
 
   log(user: User | null, logData: LogData, request?: any): void {
     const payload: LogEventPayload = {
-      user: user ? { uuid: user.uuid, username: user.username, platforms: user.platforms } : null,
+      user: user
+        ? {
+            uuid: user.uuid,
+            username: user.username,
+            platforms: user.platforms,
+          }
+        : null,
       logData,
-      request: request ? {
-        ip: this.extractIpAddress(request),
-        userAgent: request.headers?.['user-agent'] || null,
-        platform: request.headers?.['x-platform-code'] || null,
-      } : null,
+      request: request
+        ? {
+            ip: this.extractIpAddress(request),
+            userAgent: request.headers?.['user-agent'] || null,
+            platform: request.headers?.['x-platform-code'] || null,
+          }
+        : null,
     };
 
     this.pendingLogs.push(payload);
@@ -56,13 +62,21 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
 
   logAsync(user: User | null, logData: LogData, request?: any): void {
     this.eventEmitter.emit(LOG_EVENT, {
-      user: user ? { uuid: user.uuid, username: user.username, platforms: user.platforms } : null,
+      user: user
+        ? {
+            uuid: user.uuid,
+            username: user.username,
+            platforms: user.platforms,
+          }
+        : null,
       logData,
-      request: request ? {
-        ip: this.extractIpAddress(request),
-        userAgent: request.headers?.['user-agent'] || null,
-        platform: request.headers?.['x-platform-code'] || null,
-      } : null,
+      request: request
+        ? {
+            ip: this.extractIpAddress(request),
+            userAgent: request.headers?.['user-agent'] || null,
+            platform: request.headers?.['x-platform-code'] || null,
+          }
+        : null,
     });
   }
 
@@ -72,8 +86,10 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     const logsToSave = this.pendingLogs.splice(0, this.BATCH_SIZE);
 
     try {
-      const logEntities = logsToSave.map(payload => this.createLogEntity(payload));
-      await this.logRepository.save(logEntities);
+      const logEntities = logsToSave.map((payload) =>
+        this.createLogEntity(payload),
+      );
+      await this.logsRepository.saveMany(logEntities);
     } catch (error) {
       console.error('Error flushing logs:', error);
       this.pendingLogs.unshift(...logsToSave);
@@ -97,7 +113,8 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     if (request) {
       log.ipAddress = request.ip || null;
       log.userAgent = request.userAgent || null;
-      log.platform = request.platform || this.getUserPlatform(user) || this.DEFAULT_PLATFORM;
+      log.platform =
+        request.platform || this.getUserPlatform(user) || this.DEFAULT_PLATFORM;
     } else {
       log.platform = this.getUserPlatform(user) || this.DEFAULT_PLATFORM;
     }
@@ -138,39 +155,33 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     return 'unknown';
   }
 
-  async findAll(queryLogDto: QueryLogDto): Promise<PaginatedResponse<SystemLog>> {
-    const { limit = 10, page = 1, module, action, user_uuid, entity_uuid, start_date, end_date } = queryLogDto;
+  async findAll(
+    queryLogDto: QueryLogDto,
+  ): Promise<PaginatedResponse<SystemLog>> {
+    const {
+      limit = 10,
+      page = 1,
+      module,
+      action,
+      user_uuid,
+      entity_uuid,
+      start_date,
+      end_date,
+    } = queryLogDto;
 
-    const where: FindOptionsWhere<SystemLog> = {};
+    const [logs, total] = await this.logsRepository.findAll(queryLogDto);
 
-    if (module) where.module = module;
-    if (action) where.action = action;
-    if (user_uuid) where.userUuid = user_uuid;
-    if (entity_uuid) where.entityUuid = entity_uuid;
-
-    if (start_date && end_date) {
-      where.createdAt = Between(new Date(start_date), new Date(end_date));
-    } else if (start_date) {
-      where.createdAt = MoreThanOrEqual(new Date(start_date));
-    } else if (end_date) {
-      where.createdAt = LessThanOrEqual(new Date(end_date));
-    }
-
-    const [logs, total] = await this.logRepository.findAndCount({
-      where,
-      take: limit,
-      skip: (page - 1) * limit,
-      order: { createdAt: 'DESC' },
-    });
-
-    return PaginatedResponse.create(logs, total, page, limit, 'Logs retrieved successfully!');
+    return PaginatedResponse.create(
+      logs,
+      total,
+      page,
+      limit,
+      'Logs retrieved successfully!',
+    );
   }
 
   async findByEntityUuid(entityUuid: string) {
-    const logs = await this.logRepository.find({
-      where: { entityUuid },
-      order: { createdAt: 'DESC' },
-    });
+    const logs = await this.logsRepository.findByEntityUuid(entityUuid);
 
     return {
       success: true,
@@ -179,17 +190,24 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  async findByUserUuid(userUuid: string, paginationDto?: PaginationDto): Promise<PaginatedResponse<SystemLog>> {
+  async findByUserUuid(
+    userUuid: string,
+    paginationDto?: PaginationDto,
+  ): Promise<PaginatedResponse<SystemLog>> {
     const { limit = 10, page = 1 } = paginationDto || {};
 
-    const [logs, total] = await this.logRepository.findAndCount({
-      where: { userUuid },
-      take: limit,
-      skip: (page - 1) * limit,
-      order: { createdAt: 'DESC' },
-    });
+    const [logs, total] = await this.logsRepository.findByUserUuid(
+      userUuid,
+      paginationDto,
+    );
 
-    return PaginatedResponse.create(logs, total, page, limit, 'User logs retrieved successfully!');
+    return PaginatedResponse.create(
+      logs,
+      total,
+      page,
+      limit,
+      'User logs retrieved successfully!',
+    );
   }
 
   async findMyLogs(user: User, paginationDto?: PaginationDto) {

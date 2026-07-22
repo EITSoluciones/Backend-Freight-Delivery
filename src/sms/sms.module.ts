@@ -6,6 +6,6 @@ import { SmsHttpProvider } from './providers/sms-http.provider';
 @Module({
   imports: [HttpModule],
   providers: [SmsService, SmsHttpProvider],
-  exports: [SmsService], 
+  exports: [SmsService],
 })
 export class SmsModule {}

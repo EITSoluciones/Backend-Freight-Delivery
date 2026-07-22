@@ -1,4 +1,3 @@
-import { User } from 'src/users/entities/user.entity';
 import {
   BeforeInsert,
   Column,
@@ -7,12 +6,14 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Permission } from './permission.entity';
 import { Exclude } from 'class-transformer';
 import { v4 as uuidv4 } from 'uuid';
+import { UserRole } from 'src/users/entities/user-role.entity';
 
 @Entity('roles')
 export class Role {
@@ -64,8 +65,8 @@ export class Role {
     }
   }
 
-  @ManyToMany(() => User, (user) => user.roles)
-  users!: User[];
+  @OneToMany(() => UserRole, (userRole) => userRole.role)
+  user_roles!: UserRole[];
 
   @ManyToMany(() => Permission, (permission) => permission.roles)
   @JoinTable({

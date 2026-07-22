@@ -20,6 +20,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { CompanyModule } from './company/company.module';
 import { AppConfigModule } from './app-config/app-config.module';
 import { SmsModule } from './sms/sms.module';
+import { ShipmentsModule } from './shipments/shipments.module';
 
 @Module({
   imports: [
@@ -55,9 +56,10 @@ import { SmsModule } from './sms/sms.module';
     DocumentsModule,
     CompanyModule,
     AppConfigModule,
-    SmsModule
+    SmsModule,
+    ShipmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

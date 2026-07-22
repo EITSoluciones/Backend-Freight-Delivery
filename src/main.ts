@@ -10,8 +10,10 @@ async function bootstrap() {
   //app.setGlobalPrefix('api'); //Prefijo para las rutas de la aplicación
 
   // Habilita CORS para cualquier origen
-  if (process.env.CORS_ENABLED == "true") {
-    const origins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim());
+  if (process.env.CORS_ENABLED == 'true') {
+    const origins = process.env.CORS_ORIGINS?.split(',').map((origin) =>
+      origin.trim(),
+    );
     app.enableCors({
       origin: origins,
       credentials: false,
@@ -19,7 +21,6 @@ async function bootstrap() {
       allowedHeaders: 'Content-Type,Authorization',
     });
   }
-
 
   // Manejo de Versionamiento
   app.enableVersioning({
@@ -31,13 +32,13 @@ async function bootstrap() {
   // Use Global Pipes
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,              //Solo deja la data del DTO, remueve objetos basura
-      forbidNonWhitelisted: true,   //Indica las propiedades que no debe mandar, que no estan el DTO, devuelve un 400
-      transform: true,              //Activa transformación de tipos
+      whitelist: true, //Solo deja la data del DTO, remueve objetos basura
+      forbidNonWhitelisted: true, //Indica las propiedades que no debe mandar, que no estan el DTO, devuelve un 400
+      transform: true, //Activa transformación de tipos
       transformOptions: {
-        enableImplicitConversion: true  //Activa conversión automática 
-      }
-    })
+        enableImplicitConversion: true, //Activa conversión automática
+      },
+    }),
   );
 
   // Registrar interceptor global
@@ -51,15 +52,17 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
-
   await app.listen(process.env.APP_PORT ?? 3000);
 
   const logger = new Logger('Bootstrap');
 
-  logger.log(`🚀 ${process.env.APP_NAME} running in ${process.env.NODE_ENV} mode`);
+  logger.log(
+    `🚀 ${process.env.APP_NAME} running in ${process.env.NODE_ENV} mode`,
+  );
   logger.log(`📡 Server: ${process.env.APP_URL}`);
-  logger.log(`🔗 API: ${process.env.APP_URL}/${process.env.API_PREFIX}${process.env.API_VERSION}`);
+  logger.log(
+    `🔗 API: ${process.env.APP_URL}/${process.env.API_PREFIX}${process.env.API_VERSION}`,
+  );
   logger.log(`🌐 CORS enabled for: ${process.env.CORS_ORIGINS}`);
-
 }
 bootstrap();

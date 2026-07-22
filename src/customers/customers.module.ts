@@ -6,15 +6,16 @@ import { Customer } from './entities/customer.entity';
 import { AddressesModule } from 'src/addresses/addresses.module';
 import { Address } from 'src/addresses/entities/address.entity';
 import { LogsModule } from 'src/logs/logs.module';
+import { CustomersRepository } from './repositories/customers.repository';
 
 @Module({
   controllers: [CustomersController],
-  providers: [CustomersService],
+  providers: [CustomersService, CustomersRepository],
   imports: [
     TypeOrmModule.forFeature([Customer, Address]),
     AddressesModule,
     LogsModule,
   ],
-  exports: [CustomersService],
+  exports: [CustomersService, CustomersRepository],
 })
 export class CustomersModule {}

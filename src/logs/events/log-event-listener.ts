@@ -10,9 +10,7 @@ export class LogEventListener implements OnModuleInit {
   private readonly BATCH_SIZE = 10;
   private flushInterval: NodeJS.Timeout | null = null;
 
-  constructor(
-    private readonly eventEmitter: EventEmitter2,
-  ) {}
+  constructor(private readonly eventEmitter: EventEmitter2) {}
 
   onModuleInit() {
     this.eventEmitter.on(LOG_EVENT, (payload: LogEventPayload) => {
@@ -59,7 +57,8 @@ export class LogEventListener implements OnModuleInit {
     if (request) {
       log.ipAddress = request.ip || null;
       log.userAgent = request.userAgent || null;
-      log.platform = request.platform || this.getUserPlatform(user) || this.DEFAULT_PLATFORM;
+      log.platform =
+        request.platform || this.getUserPlatform(user) || this.DEFAULT_PLATFORM;
     } else {
       log.platform = this.getUserPlatform(user) || this.DEFAULT_PLATFORM;
     }

@@ -1,14 +1,7 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, QueryFailedError, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Platform } from 'src/platforms/entities/platform.entity';
 import { Role } from 'src/roles/entities/role.entity';
+import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
@@ -20,18 +13,20 @@ import * as bcrypt from 'bcrypt';
 import { LogsService } from 'src/logs/logs.service';
 import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogAction } from 'src/logs/enums/log-action.enum';
+import { UsersRepository } from './repositories/users.repository';
+import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
+import { PlatformsRepository } from 'src/platforms/repositories/platforms.repository';
+import { RolesRepository } from 'src/roles/repositories/roles.repository';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Platform)
-    private readonly platformRepository: Repository<Platform>,
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
+    private readonly usersRepository: UsersRepository,
+    private readonly platformsRepository: PlatformsRepository,
+    private readonly rolesRepository: RolesRepository,
     private readonly logsService: LogsService,
-  ) { }
+    private readonly dbErrorHandler: DBErrorHandlerService,
+  ) {}
 
   /** Crear Usuario */
   async create(
@@ -44,14 +39,14 @@ export class UsersService {
       const platformsIds = await this.findPlatformsByCode(platforms);
       const rolesIds = await this.findRolesByCode(roles);
 
-      const user = this.userRepository.create({
+      const user = this.usersRepository.create({
         ...userData,
         password: bcrypt.hashSync(password, 10),
         platforms: platformsIds,
-        roles: rolesIds,
       });
 
-      const savedUser = await this.userRepository.save(user);
+      const savedUser = await this.usersRepository.save(user);
+      await this.usersRepository.assignRoles(savedUser, rolesIds);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.USERS,
@@ -68,7 +63,7 @@ export class UsersService {
         savedUser,
       );
     } catch (error) {
-      this.handleDBErrors(error);
+      this.dbErrorHandler.handleDBErrors(error);
     }
   }
 
@@ -76,20 +71,8 @@ export class UsersService {
   async findAll(
     paginationDto: PaginationDto,
   ): Promise<PaginatedResponse<User>> {
-    const { limit = 10, page = 1, is_active } = paginationDto;
-
-    const bool = is_active === 'true';
-
-    const where = {
-      ...(bool !== undefined && { is_active: bool }),
-    };
-
-    const [users, total] = await this.userRepository.findAndCount({
-      where,
-      take: limit,
-      skip: (page - 1) * limit,
-      relations: ['platforms', 'roles'],
-    });
+    const { limit = 10, page = 1 } = paginationDto;
+    const [users, total] = await this.usersRepository.findAll(paginationDto);
 
     return PaginatedResponse.create(
       users,
@@ -102,34 +85,13 @@ export class UsersService {
 
   /** Buscar Usuario */
   async findOne(uuid: string): Promise<SuccessResponseDto<User>> {
-    const user = await this.userRepository.findOne({
-      where: { uuid },
-      relations: ['platforms', 'roles'],
-    });
-
-    if (!user) {
-      throw new NotFoundException(
-        `El usuario con uuid ${uuid} no se encontró!`,
-      );
-    }
+    const user = await this.findUserByUuid(uuid);
 
     return new SuccessResponseDto(true, 'Usuario Encontrado!', user);
   }
 
   async getUsersByRole(roles: string): Promise<SuccessResponseDto<User[]>> {
-    const users = await this.userRepository.find({
-      where: {
-        is_active: true,
-        roles: {
-          code: roles,
-          is_active: true,
-        },
-      },
-      relations: ['roles'],
-      order: {
-        username: 'ASC',
-      },
-    });
+    const users = await this.usersRepository.findByRoleCode(roles);
 
     return new SuccessResponseDto(
       true,
@@ -137,7 +99,6 @@ export class UsersService {
       users,
     );
   }
-
 
   /** Actualizar Parcialmente Usuario */
   async partialUpdate(
@@ -147,13 +108,7 @@ export class UsersService {
   ): Promise<SuccessResponseDto<User>> {
     const { password, platforms, roles, ...userDataToUpdate } = updateUserDto;
 
-    const userToUpdate = await this.userRepository.findOne({
-      where: { uuid },
-      relations: ['platforms', 'roles'],
-    });
-
-    if (!userToUpdate)
-      throw new NotFoundException(`Usuario con uuid: ${uuid} no encontrado`);
+    const userToUpdate = await this.findUserByUuid(uuid);
 
     try {
       const oldData = { ...userToUpdate };
@@ -171,10 +126,10 @@ export class UsersService {
 
       if (roles) {
         const rolesEntities = await this.findRolesByCode(roles);
-        userToUpdate.roles = rolesEntities;
+        await this.usersRepository.assignRoles(userToUpdate, rolesEntities);
       }
 
-      const updatedUser = await this.userRepository.save(userToUpdate);
+      const updatedUser = await this.usersRepository.save(userToUpdate);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.USERS,
@@ -197,7 +152,7 @@ export class UsersService {
         updatedUser,
       );
     } catch (error) {
-      this.handleDBErrors(error);
+      this.dbErrorHandler.handleDBErrors(error);
     }
   }
 
@@ -206,9 +161,7 @@ export class UsersService {
     uuid: string,
     currentUser?: User,
   ): Promise<SuccessResponseDto<User>> {
-    const user = await this.userRepository.findOne({
-      where: { uuid },
-    });
+    const user = await this.usersRepository.findByUuidWithoutRelations(uuid);
 
     if (!user) {
       throw new NotFoundException(
@@ -216,7 +169,7 @@ export class UsersService {
       );
     }
 
-    await this.userRepository.softDelete({ uuid });
+    await this.usersRepository.softDeleteByUuid(uuid);
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.USERS,
@@ -235,9 +188,7 @@ export class UsersService {
   }
 
   async findPlatformsByCode(codes: string[]): Promise<Platform[]> {
-    const platformsIds = await this.platformRepository.find({
-      where: { code: In(codes) },
-    });
+    const platformsIds = await this.platformsRepository.findByCodes(codes);
     const missingCodes = codes.filter(
       (code) => !platformsIds.some((p) => p.code === code),
     );
@@ -249,9 +200,7 @@ export class UsersService {
   }
 
   async findRolesByCode(codes: string[]): Promise<Role[]> {
-    const rolesIds = await this.roleRepository.find({
-      where: { code: In(codes) },
-    });
+    const rolesIds = await this.rolesRepository.findRolesByCodes(codes);
     const missingCodes = codes.filter(
       (code) => !rolesIds.some((p) => p.code === code),
     );
@@ -262,24 +211,16 @@ export class UsersService {
     return rolesIds;
   }
 
+  async findUserByUuid(uuid: string): Promise<User> {
+    const user = await this.usersRepository.findByUuid(uuid);
 
-  private handleDBErrors(error: any): never {
-    if (error instanceof NotFoundException) throw error;
-
-    if (error instanceof QueryFailedError) {
-      if ((error as any).errno === 1062) {
-        throw new BadRequestException(
-          (error as any).detail ||
-          (error as any).sqlMessage ||
-          'Registro Duplicado',
-        );
-      }
+    if (!user) {
+      throw new NotFoundException(
+        `El usuario con uuid ${uuid} no se encontró!`,
+      );
     }
 
-    console.error(error);
-    throw new InternalServerErrorException(
-      'Error del Servidor. Porfavor contacte al administrador del sistema!',
-    );
+    return user;
   }
 
   /** Búsqueda de usuario por email o nickname */
@@ -287,20 +228,7 @@ export class UsersService {
     email?: string,
     username?: string,
   ): Promise<SuccessResponseDto<User[]>> {
-    const query = this.userRepository.createQueryBuilder('user');
-
-    if (email && username) {
-      query.where('user.email = :email OR user.username = :username', {
-        email,
-        username,
-      });
-    } else if (email) {
-      query.where('user.email = :email', { email });
-    } else if (username) {
-      query.where('user.username = :username', { username });
-    }
-
-    const response = await query.getMany();
+    const response = await this.usersRepository.search(email, username);
 
     return new SuccessResponseDto(true, 'Respuesta Obtenida!', response);
   }

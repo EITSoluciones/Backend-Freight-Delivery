@@ -1,6 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { CreateDeliveryDriverDto } from './dto/create-delivery-driver.dto';
 import { UpdateDeliveryDriverDto } from './dto/update-delivery-driver.dto';
@@ -20,32 +22,22 @@ import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
 import { DeliveryCatalog } from 'src/delivery-catalogs/entities/delivery-catalog.entity';
-
-const DRIVER_CATALOG_CATEGORIES = [
-  'driver_profile',
-  'driver_type',
-  'license_type',
-  'document_type',
-  'driver_status',
-  'vehicle_type',
-  'vehicle_status',
-] as const;
+import { DeliveryDriversRepository } from './repositories/delivery-drivers.repository';
+import { DeliveryCatalogsRepository } from 'src/delivery-catalogs/repositories/delivery-catalogs.repository';
 
 const DEFAULT_DELIVERY_ROLE_CODE = 'DELIVERY';
 
 @Injectable()
 export class DeliveryDriversService {
   constructor(
-    @InjectRepository(DeliveryDriver)
-    private readonly deliveryDriverRepository: Repository<DeliveryDriver>,
+    private readonly deliveryDriversRepository: DeliveryDriversRepository,
 
-    @InjectRepository(DeliveryCatalog)
-    private readonly deliveryCatalogRepository: Repository<DeliveryCatalog>,
+    private readonly deliveryCatalogsRepository: DeliveryCatalogsRepository,
 
     private readonly logsService: LogsService,
 
     private readonly usersService: UsersService,
-  ) { }
+  ) {}
 
   async create(
     createDeliveryDriverDto: CreateDeliveryDriverDto,
@@ -53,12 +45,10 @@ export class DeliveryDriversService {
   ): Promise<SuccessResponseDto<DeliveryDriver>> {
     const user = await this.validateUser(createDeliveryDriverDto.user_uuid);
 
-    await this.validateUserDeliveryAssignment(
-      user.id
-    );
+    await this.validateUserDeliveryAssignment(user.id);
 
-    const savedDriver = await this.deliveryDriverRepository.save(
-      this.deliveryDriverRepository.create(createDeliveryDriverDto),
+    const savedDriver = await this.deliveryDriversRepository.save(
+      this.deliveryDriversRepository.create(createDeliveryDriverDto),
     );
 
     const createdDriver = await this.getDriverByUuid(savedDriver.uuid);
@@ -69,7 +59,7 @@ export class DeliveryDriversService {
       entityUuid: savedDriver.uuid,
       entityName: `Driver ${savedDriver.uuid}`,
       description: `Repartidor creado con user id: ${savedDriver.user_id}`,
-      newData:{...createdDriver},
+      newData: { ...createdDriver },
     });
 
     return new SuccessResponseDto(
@@ -96,17 +86,8 @@ export class DeliveryDriversService {
   ): Promise<Record<string, DeliveryCatalog[]>> {
     const cleanType = type?.trim();
 
-    const catalogItems = await this.deliveryCatalogRepository.find({
-      where: {
-        is_active: true,
-        category: cleanType,
-      },
-      order: {
-        category: 'ASC',
-        sort_order: 'ASC',
-        name: 'ASC',
-      },
-    });
+    const catalogItems =
+      await this.deliveryCatalogsRepository.findActiveByCategory(cleanType);
 
     const catalogs: Record<string, DeliveryCatalog[]> = {};
 
@@ -121,20 +102,13 @@ export class DeliveryDriversService {
     return catalogs;
   }
 
-
   async findAll(
     paginationDto?: PaginationDto,
   ): Promise<PaginatedResponse<DeliveryDriver>> {
     const { limit = 10, page = 1 } = paginationDto || {};
 
-    const [drivers, total] = await this.deliveryDriverRepository.findAndCount({
-      relations: ['user', 'vehicles'],
-      order: {
-        created_at: 'DESC',
-      },
-      take: limit,
-      skip: (page - 1) * limit,
-    });
+    const [drivers, total] =
+      await this.deliveryDriversRepository.findAll(paginationDto);
 
     return PaginatedResponse.create(
       drivers,
@@ -148,11 +122,7 @@ export class DeliveryDriversService {
   async findOne(uuid: string): Promise<SuccessResponseDto<DeliveryDriver>> {
     const driver = await this.getDriverByUuid(uuid);
 
-    return new SuccessResponseDto(
-      true,
-      'Repartidor encontrado!',
-      driver,
-    );
+    return new SuccessResponseDto(true, 'Repartidor encontrado!', driver);
   }
 
   async update(
@@ -161,19 +131,16 @@ export class DeliveryDriversService {
     currentUser?: User,
   ): Promise<SuccessResponseDto<DeliveryDriver>> {
     const driverToUpdate = await this.getDriverByUuid(uuid);
-    const oldData = {...driverToUpdate};
+    const oldData = { ...driverToUpdate };
     if (updateDeliveryDriverDto.user_uuid) {
       const user = await this.validateUser(updateDeliveryDriverDto.user_uuid);
 
-      await this.validateUserDeliveryAssignment(
-        user.id,
-        driverToUpdate.uuid,
-      );
+      await this.validateUserDeliveryAssignment(user.id, driverToUpdate.uuid);
     }
 
     Object.assign(driverToUpdate, updateDeliveryDriverDto);
 
-    await this.deliveryDriverRepository.save(driverToUpdate);
+    await this.deliveryDriversRepository.save(driverToUpdate);
 
     const updatedDriver = await this.getDriverByUuid(uuid);
 
@@ -200,7 +167,7 @@ export class DeliveryDriversService {
   ): Promise<SuccessResponseDto<DeliveryDriver>> {
     const driver = await this.getDriverByUuid(uuid);
 
-    await this.deliveryDriverRepository.softDelete({ uuid });
+    await this.deliveryDriversRepository.softDeleteByUuid(uuid);
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_DRIVERS,
@@ -208,7 +175,7 @@ export class DeliveryDriversService {
       entityUuid: driver.uuid,
       entityName: `Driver ${driver.uuid}`,
       description: `Repartidor eliminado: ${driver.uuid}`,
-      oldData: {...driver},
+      oldData: { ...driver },
     });
 
     return new SuccessResponseDto(
@@ -219,27 +186,20 @@ export class DeliveryDriversService {
   }
 
   private async getDriverByUuid(uuid: string): Promise<DeliveryDriver> {
-    const driver = await this.deliveryDriverRepository.findOne({
-      where: { uuid },
-      relations: ['user', 'vehicles'],
-    });
+    const driver = await this.deliveryDriversRepository.findByUuid(uuid);
 
     if (!driver) {
-      throw new NotFoundException(
-        `Repartidor con uuid ${uuid} no encontrado!`,
-      );
+      throw new NotFoundException(`Repartidor con uuid ${uuid} no encontrado!`);
     }
 
     return driver;
   }
 
   private async validateUser(uuid: string): Promise<User> {
-    const result = await this.usersService.findOne(uuid);
-    const user = result.data;
+    const user = await this.usersService.findUserByUuid(uuid);
     const hasDeliveryRole = user.roles?.some(
       (role) =>
-        role.code === DEFAULT_DELIVERY_ROLE_CODE &&
-        role.is_active === true,
+        role.code === DEFAULT_DELIVERY_ROLE_CODE && role.is_active === true,
     );
     if (!hasDeliveryRole) {
       throw new BadRequestException(
@@ -254,19 +214,19 @@ export class DeliveryDriversService {
     userId: number,
     excludeDeliveryUuid?: string,
   ): Promise<void> {
-    const existingDelivery = await this.deliveryDriverRepository.findOne({
-      where: {
-        user_id: userId,
-      },
-    });
+    const existingDelivery =
+      await this.deliveryDriversRepository.findByUserId(userId);
 
     if (!existingDelivery) {
       return;
     }
 
-    if (excludeDeliveryUuid && existingDelivery.uuid === excludeDeliveryUuid) { return; }
+    if (excludeDeliveryUuid && existingDelivery.uuid === excludeDeliveryUuid) {
+      return;
+    }
 
-    throw new BadRequestException('El usuario seleccionado ya tiene un delivery asignado',
+    throw new BadRequestException(
+      'El usuario seleccionado ya tiene un delivery asignado',
     );
   }
 }

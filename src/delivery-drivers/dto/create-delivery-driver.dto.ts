@@ -14,7 +14,6 @@ export class CreateDeliveryDriverDto {
   @IsUUID()
   user_uuid!: string;
 
-
   @ApiProperty({ example: '8123456789' })
   @IsNotEmpty()
   @IsString()

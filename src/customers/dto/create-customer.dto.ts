@@ -7,12 +7,8 @@ import {
   IsNotEmpty,
   MaxLength,
 } from 'class-validator';
-import {
-  Type
-} from 'class-transformer';
-import {
-  CreateAddressDto
-} from 'src/addresses/dto/create-address.dto';
+import { Type } from 'class-transformer';
+import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 
 export class CreateCustomerDto {
   @IsString()
@@ -37,7 +33,7 @@ export class CreateCustomerDto {
 
   @IsArray()
   @ValidateNested({
-    each: true
+    each: true,
   })
   @Type(() => CreateAddressDto)
   addresses!: CreateAddressDto[];

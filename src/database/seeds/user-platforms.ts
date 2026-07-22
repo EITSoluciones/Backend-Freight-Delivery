@@ -16,7 +16,6 @@ export async function seedUserPlatforms(dataSource: DataSource) {
       username: 'admin',
       platformCodes: ['web', 'mobile'],
     },
-    
   ];
 
   for (const item of seeds) {

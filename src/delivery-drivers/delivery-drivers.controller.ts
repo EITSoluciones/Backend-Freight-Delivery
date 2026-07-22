@@ -29,7 +29,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 export class DeliveryDriversController {
   constructor(
     private readonly deliveryDriversService: DeliveryDriversService,
-  ) { }
+  ) {}
 
   @Post()
   @Auth(Permissions.DeliveryDriversCreate)
@@ -48,8 +48,6 @@ export class DeliveryDriversController {
   findAll(@Query() paginationDto: PaginationDto) {
     return this.deliveryDriversService.findAll(paginationDto);
   }
-
-
 
   @Get('catalogs')
   @Auth(Permissions.DeliveryDriversView)

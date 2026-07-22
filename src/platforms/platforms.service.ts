@@ -1,23 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { CreatePlatformDto } from './dto/create-platform.dto';
 import { UpdatePlatformDto } from './dto/update-platform.dto';
 import { Platform } from './entities/platform.entity';
 import { SuccessResponseDto } from 'src/common/dto/success-response.dto';
+import { PlatformsRepository } from './repositories/platforms.repository';
 
 @Injectable()
 export class PlatformsService {
-  constructor(
-    @InjectRepository(Platform)
-    private readonly platformRepository: Repository<Platform>,
-  ) {}
+  constructor(private readonly platformsRepository: PlatformsRepository) {}
 
   async create(
     createPlatformDto: CreatePlatformDto,
   ): Promise<SuccessResponseDto<Platform>> {
-    const platform = this.platformRepository.create(createPlatformDto);
-    const saved = await this.platformRepository.save(platform);
+    const platform = this.platformsRepository.create(createPlatformDto);
+    const saved = await this.platformsRepository.save(platform);
     return new SuccessResponseDto(
       true,
       'Plataforma creada exitosamente!',
@@ -26,9 +22,7 @@ export class PlatformsService {
   }
 
   async findAll(): Promise<SuccessResponseDto<Platform[]>> {
-    const platforms = await this.platformRepository.find({
-      where: { is_active: true },
-    });
+    const platforms = await this.platformsRepository.findActive();
     return new SuccessResponseDto(
       true,
       'Plataformas obtenidos exitosamente!',
@@ -37,7 +31,7 @@ export class PlatformsService {
   }
 
   async findOne(id: number): Promise<SuccessResponseDto<Platform>> {
-    const platform = await this.platformRepository.findOne({ where: { id } });
+    const platform = await this.platformsRepository.findById(id);
     if (!platform) {
       throw new NotFoundException(`Plataforma con id ${id} no encontrada`);
     }
@@ -48,12 +42,12 @@ export class PlatformsService {
     id: number,
     updatePlatformDto: UpdatePlatformDto,
   ): Promise<SuccessResponseDto<Platform>> {
-    const platform = await this.platformRepository.findOne({ where: { id } });
+    const platform = await this.platformsRepository.findById(id);
     if (!platform) {
       throw new NotFoundException(`Plataforma con id ${id} no encontrada`);
     }
     Object.assign(platform, updatePlatformDto);
-    const updated = await this.platformRepository.save(platform);
+    const updated = await this.platformsRepository.save(platform);
     return new SuccessResponseDto(
       true,
       'Plataforma actualizada exitosamente!',
@@ -62,11 +56,11 @@ export class PlatformsService {
   }
 
   async remove(id: number): Promise<SuccessResponseDto<Platform>> {
-    const platform = await this.platformRepository.findOne({ where: { id } });
+    const platform = await this.platformsRepository.findById(id);
     if (!platform) {
       throw new NotFoundException(`Plataforma con id ${id} no encontrada`);
     }
-    await this.platformRepository.softDelete({ id });
+    await this.platformsRepository.softDeleteById(id);
     return new SuccessResponseDto(
       true,
       'Plataforma eliminada exitosamente!',

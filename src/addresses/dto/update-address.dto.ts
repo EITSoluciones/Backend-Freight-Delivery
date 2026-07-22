@@ -3,7 +3,7 @@ import { CreateAddressDto } from './create-address.dto';
 import { IsOptional, IsUUID } from 'class-validator';
 
 export class UpdateAddressDto extends PartialType(CreateAddressDto) {
-    @IsOptional()
-    @IsUUID()
-    uuid?: string;
+  @IsOptional()
+  @IsUUID()
+  uuid?: string;
 }

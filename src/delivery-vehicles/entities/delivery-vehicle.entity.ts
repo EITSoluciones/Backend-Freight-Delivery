@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { DeliveryDriver } from 'src/delivery-drivers/entities/delivery-driver.entity';
+import { DeliveryVehicleAssignment } from './delivery-vehicle-assignment.entity';
 import {
   BeforeInsert,
   Column,
@@ -7,7 +7,7 @@ import {
   DeleteDateColumn,
   Entity,
   JoinColumn,
-  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -21,10 +21,6 @@ export class DeliveryVehicle {
 
   @Column({ type: 'uuid', unique: true })
   uuid!: string;
-
-  @Exclude()
-  @Column({ type: 'int', name: 'delivery_driver_id' })
-  delivery_driver_id!: number;
 
   @Column({ type: 'varchar', length: 100 })
   name!: string;
@@ -65,9 +61,11 @@ export class DeliveryVehicle {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deleted_at?: Date | null;
 
-  @ManyToOne(() => DeliveryDriver, (driver) => driver.vehicles)
-  @JoinColumn({ name: 'delivery_driver_id' })
-  delivery_driver!: DeliveryDriver;
+  @OneToMany(
+    () => DeliveryVehicleAssignment,
+    (assignment) => assignment.delivery_vehicle,
+  )
+  driver_assignments!: DeliveryVehicleAssignment[];
 
   @BeforeInsert()
   generateUuid() {

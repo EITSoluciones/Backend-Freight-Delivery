@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseUUIDPipe,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+} from '@nestjs/common';
 import { ModuleCategoriesService } from './module-categories.service';
 import { CreateModuleCategoryDto } from './dto/create-module-category.dto';
 import { UpdateModuleCategoryDto } from './dto/update-module-category.dto';
@@ -7,14 +19,15 @@ import { ApiTags } from '@nestjs/swagger';
 import { Auth } from 'src/auth/decorators';
 import { Permissions } from 'src/auth/interfaces';
 
-
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller({
   path: 'module-categories',
   version: '1',
 })
 export class ModuleCategoriesController {
-  constructor(private readonly moduleCategoriesService: ModuleCategoriesService) { }
+  constructor(
+    private readonly moduleCategoriesService: ModuleCategoriesService,
+  ) {}
 
   /** Obtener Catálogo de Categorías */
   @Get('catalog')

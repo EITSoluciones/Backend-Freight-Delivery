@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { DeliveryVehicle } from 'src/delivery-vehicles/entities/delivery-vehicle.entity';
+import { DeliveryVehicleAssignment } from 'src/delivery-vehicles/entities/delivery-vehicle-assignment.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   BeforeInsert,
@@ -70,8 +70,11 @@ export class DeliveryDriver {
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
-  @OneToMany(() => DeliveryVehicle, (vehicle) => vehicle.delivery_driver)
-  vehicles!: DeliveryVehicle[];
+  @OneToMany(
+    () => DeliveryVehicleAssignment,
+    (assignment) => assignment.delivery_driver,
+  )
+  vehicle_assignments!: DeliveryVehicleAssignment[];
 
   @BeforeInsert()
   generateUuid() {

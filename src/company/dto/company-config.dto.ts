@@ -1,5 +1,10 @@
 import { IsString, IsOptional, MaxLength } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  OmitType,
+  PartialType,
+} from '@nestjs/swagger';
 
 export class CreateCompanyConfigDto {
   @ApiProperty({ example: 'theme_color' })
