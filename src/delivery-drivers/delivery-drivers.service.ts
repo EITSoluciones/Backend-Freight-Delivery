@@ -19,14 +19,16 @@ import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogAction } from 'src/logs/enums/log-action.enum';
 
 import { User } from 'src/users/entities/user.entity';
-import { UsersService } from 'src/users/users.service';
 
 import { DeliveryCatalog } from 'src/delivery-catalogs/entities/delivery-catalog.entity';
 import { DeliveryDriversRepository } from './repositories/delivery-drivers.repository';
 import { DeliveryCatalogsRepository } from 'src/delivery-catalogs/repositories/delivery-catalogs.repository';
+import { UsersRepository } from 'src/users/repositories/users.repository';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { SendDeliveryDriverInvitationDto } from './dto/send-delivery-driver-invitation.dto';
 
 const DEFAULT_DELIVERY_ROLE_CODE = 'DELIVERY';
-
+const DEFAULT_DELIVERY_INVITATION_NOTIFICATION_CODE = 'DELIVERY_DRIVER_INVITATION';
 @Injectable()
 export class DeliveryDriversService {
   constructor(
@@ -36,19 +38,31 @@ export class DeliveryDriversService {
 
     private readonly logsService: LogsService,
 
-    private readonly usersService: UsersService,
+    private readonly usersRepository: UsersRepository,
+
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
     createDeliveryDriverDto: CreateDeliveryDriverDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<DeliveryDriver>> {
-    const user = await this.validateUser(createDeliveryDriverDto.user_uuid);
+    const { user_uuid, license_expiration, ...driverData } =
+      createDeliveryDriverDto;
+    const user = user_uuid ? await this.validateUser(user_uuid) : null;
 
-    await this.validateUserDeliveryAssignment(user.id);
+    if (user) {
+      await this.validateUserDeliveryAssignment(user.id);
+    }
 
     const savedDriver = await this.deliveryDriversRepository.save(
-      this.deliveryDriversRepository.create(createDeliveryDriverDto),
+      this.deliveryDriversRepository.create({
+        ...driverData,
+        user_id: user?.id ?? null,
+        license_expiration: license_expiration
+          ? String(license_expiration).split('T')[0]
+          : undefined,
+      }),
     );
 
     const createdDriver = await this.getDriverByUuid(savedDriver.uuid);
@@ -119,6 +133,53 @@ export class DeliveryDriversService {
     );
   }
 
+  async getUsersForDeliveryDrivers() {
+    const users = await this.usersRepository.findByRoleCode(
+      DEFAULT_DELIVERY_ROLE_CODE,
+    );
+    return new SuccessResponseDto(
+      true,
+      'Usuarios obtenidos exitosamente!',
+      users,
+    );
+  }
+
+  async sendInvitation(sendInvitationDto: SendDeliveryDriverInvitationDto) {
+    const user = await this.usersRepository.findByUuid(
+      sendInvitationDto.user_uuid,
+    );
+
+    if (!user) {
+      throw new NotFoundException('El usuario seleccionado no existe');
+    }
+
+    const driver = await this.deliveryDriversRepository.findByUserId(user.id);
+
+    if (!driver) {
+      throw new NotFoundException(
+        'El usuario seleccionado no tiene un repartidor con teléfono asignado',
+      );
+    }
+
+    const parameters = {
+      param0: [user.name, user.last_name].filter(Boolean).join(' ') || user.username,
+    };
+
+    const result = await this.notificationsService.sendNotification(
+      DEFAULT_DELIVERY_INVITATION_NOTIFICATION_CODE,
+      driver.country_code,
+      driver.phone,
+      parameters,
+    );
+
+    return new SuccessResponseDto(true, 'Invitación enviada exitosamente!', {
+      notification_uuid: result.notification.uuid,
+      user_uuid: user.uuid,
+      to: driver.phone,
+      provider_response: result.response,
+    });
+  }
+
   async findOne(uuid: string): Promise<SuccessResponseDto<DeliveryDriver>> {
     const driver = await this.getDriverByUuid(uuid);
 
@@ -132,13 +193,25 @@ export class DeliveryDriversService {
   ): Promise<SuccessResponseDto<DeliveryDriver>> {
     const driverToUpdate = await this.getDriverByUuid(uuid);
     const oldData = { ...driverToUpdate };
-    if (updateDeliveryDriverDto.user_uuid) {
-      const user = await this.validateUser(updateDeliveryDriverDto.user_uuid);
-
+    const { user_uuid, license_expiration, ...driverData } =
+      updateDeliveryDriverDto;
+    const updateData: Partial<DeliveryDriver> = {
+      ...driverData,
+      ...(license_expiration
+        ? { license_expiration: new Date(license_expiration) }
+        : {}),
+    };
+    if (user_uuid === null) {
+      updateData.user_id = null;
+    } else if (user_uuid) {
+      const user = await this.validateUser(user_uuid);
+      if (!user)
+        throw new BadRequestException('El usuario seleccionado no es válido');
       await this.validateUserDeliveryAssignment(user.id, driverToUpdate.uuid);
+      updateData.user_id = user.id;
     }
 
-    Object.assign(driverToUpdate, updateDeliveryDriverDto);
+    Object.assign(driverToUpdate, updateData);
 
     await this.deliveryDriversRepository.save(driverToUpdate);
 
@@ -195,9 +268,9 @@ export class DeliveryDriversService {
     return driver;
   }
 
-  private async validateUser(uuid: string): Promise<User> {
-    const user = await this.usersService.findUserByUuid(uuid);
-    const hasDeliveryRole = user.roles?.some(
+  private async validateUser(uuid: string): Promise<User | null> {
+    const user = await this.usersRepository.findByUuid(uuid);
+    const hasDeliveryRole = user?.roles?.some(
       (role) =>
         role.code === DEFAULT_DELIVERY_ROLE_CODE && role.is_active === true,
     );
@@ -229,4 +302,6 @@ export class DeliveryDriversService {
       'El usuario seleccionado ya tiene un delivery asignado',
     );
   }
+
+ 
 }

@@ -19,6 +19,7 @@ import { Auth, GetUser } from 'src/auth/decorators';
 import { Permissions } from 'src/auth/interfaces';
 import { User } from 'src/users/entities/user.entity';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { SendDeliveryDriverInvitationDto } from './dto/send-delivery-driver-invitation.dto';
 
 @ApiTags('Delivery Drivers')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -49,11 +50,24 @@ export class DeliveryDriversController {
     return this.deliveryDriversService.findAll(paginationDto);
   }
 
+  @Get('users-for-delivery-drivers')
+  @Auth(Permissions.DeliveryDriversView)
+  getUsersForDeliveryDrivers(@Query('type') type?: string) {
+    return this.deliveryDriversService.getUsersForDeliveryDrivers();
+  }
+
   @Get('catalogs')
   @Auth(Permissions.DeliveryDriversView)
   getCatalogsDriverByType(@Query('type') type?: string) {
     return this.deliveryDriversService.getCatalogs(type);
   }
+
+  @Post('send-invitation')
+  @Auth(Permissions.DeliveryDriversUpdate)
+  sendInvitation(@Body() sendInvitationDto: SendDeliveryDriverInvitationDto) {
+    return this.deliveryDriversService.sendInvitation(sendInvitationDto);
+  }
+
   @Get(':uuid')
   @Auth(Permissions.DeliveryDriversView)
   findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {

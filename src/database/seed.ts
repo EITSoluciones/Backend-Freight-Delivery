@@ -13,6 +13,7 @@ import {
   seedAppConfig,
   seedDeliveryCatalogs,
   seedShipmentStatuses,
+  seedNotifications,
 } from './seeds';
 
 async function refreshDatabase() {
@@ -34,6 +35,7 @@ async function refreshDatabase() {
     'shipments',
     'shipment_statuses',
     'delivery_vehicle_assignments',
+    'notifications',
   ];
 
   for (const table of tables) {
@@ -64,6 +66,7 @@ async function runSeeds() {
   await seedAppConfig(AppDataSource);
   await seedDeliveryCatalogs(AppDataSource);
   await seedShipmentStatuses(AppDataSource);
+  await seedNotifications(AppDataSource);
 
   console.log('✅ Seeds ejecutados correctamente');
   process.exit(0);

@@ -1,24 +1,34 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsDateString,
   IsNotEmpty,
+  IsOptional,
   IsString,
   IsUUID,
   MaxLength,
 } from 'class-validator';
 
 export class CreateDeliveryDriverDto {
-  @ApiProperty({ example: '0f4e8f7b-8f4f-469d-9fea-f64a0e7db7e9' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({
+    example: '0f4e8f7b-8f4f-469d-9fea-f64a0e7db7e9',
+    nullable: true,
+  })
+  @IsOptional()
   @IsUUID()
-  user_uuid!: string;
+  user_uuid?: string | null;
 
   @ApiProperty({ example: '8123456789' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(20)
   phone!: string;
+
+  @ApiProperty({ example: '+52' })
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(8)
+  country_code!: string;
 
   @ApiProperty({ example: 'internal' })
   @IsNotEmpty()
@@ -28,13 +38,13 @@ export class CreateDeliveryDriverDto {
   @ApiProperty({ example: 'ine' })
   @IsNotEmpty()
   @IsString()
-  document_type!: string;
+  identity_document_type!: string;
 
   @ApiProperty({ example: 'ABCD123456EFG' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(50)
-  document_number!: string;
+  identity_document_number!: string;
 
   @ApiProperty({ example: 'chofer' })
   @IsNotEmpty()

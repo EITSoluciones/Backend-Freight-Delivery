@@ -19,8 +19,9 @@ import { LogsModule } from './logs/logs.module';
 import { DocumentsModule } from './documents/documents.module';
 import { CompanyModule } from './company/company.module';
 import { AppConfigModule } from './app-config/app-config.module';
-import { SmsModule } from './sms/sms.module';
+import { TwilioModule } from './twilio/twilio.module';
 import { ShipmentsModule } from './shipments/shipments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -56,8 +57,9 @@ import { ShipmentsModule } from './shipments/shipments.module';
     DocumentsModule,
     CompanyModule,
     AppConfigModule,
-    SmsModule,
+    TwilioModule,
     ShipmentsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

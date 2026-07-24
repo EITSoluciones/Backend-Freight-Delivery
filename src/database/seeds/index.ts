@@ -10,3 +10,4 @@ export * from './users';
 export * from './app-config';
 export * from './delivery-catalogs';
 export * from './shipment-statuses';
+export * from './notifications';
