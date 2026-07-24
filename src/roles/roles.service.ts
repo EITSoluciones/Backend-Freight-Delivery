@@ -3,8 +3,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { Role } from './entities/role.entity';
@@ -20,34 +18,25 @@ import { LogsService } from 'src/logs/logs.service';
 import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogAction } from 'src/logs/enums/log-action.enum';
 import { User } from 'src/users/entities/user.entity';
+import { RolesRepository } from './repositories/roles.repository';
 
 @Injectable()
 export class RolesService {
   constructor(
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
-
-    @InjectRepository(Permission)
-    private readonly permissionRepository: Repository<Permission>,
-
+    private readonly rolesRepository: RolesRepository,
     private readonly dbErrorHandler: DBErrorHandlerService,
     private readonly logsService: LogsService,
   ) {}
 
   /** Obtener Catálogo de Roles */
   async getRolesCatalog(): Promise<SuccessResponseDto<Role[]>> {
-    const roles = await this.roleRepository.find({
-      where: { is_active: true },
-    });
+    const roles = await this.rolesRepository.findActiveRoles();
     return new SuccessResponseDto(true, 'Roles obtenidos exitosamente!', roles);
   }
 
   /** Obtener Catálogo de Permisos */
   async getPermissionsCatalog(): Promise<SuccessResponseDto<Permission[]>> {
-    const permissions = await this.permissionRepository.find({
-      where: { is_active: true },
-      relations: ['module'],
-    });
+    const permissions = await this.rolesRepository.findActivePermissions();
 
     return new SuccessResponseDto(
       true,
@@ -62,8 +51,8 @@ export class RolesService {
     currentUser?: User,
   ): Promise<SuccessResponseDto<Role>> {
     try {
-      const roleCategory = this.roleRepository.create(createRoleDto);
-      const savedRole = await this.roleRepository.save(roleCategory);
+      const roleCategory = this.rolesRepository.createRole(createRoleDto);
+      const savedRole = await this.rolesRepository.saveRole(roleCategory);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.ROLES,
@@ -90,17 +79,7 @@ export class RolesService {
   ): Promise<PaginatedResponse<Role>> {
     const { limit = 10, page = 1, is_active } = paginationDto;
 
-    const bool = is_active === 'true';
-
-    const where = {
-      ...(bool !== undefined && { is_active: bool }),
-    };
-
-    const [Roles, total] = await this.roleRepository.findAndCount({
-      where,
-      take: limit,
-      skip: (page - 1) * limit,
-    });
+    const [Roles, total] = await this.rolesRepository.findRoles(paginationDto);
 
     return PaginatedResponse.create(
       Roles,
@@ -113,7 +92,7 @@ export class RolesService {
 
   /** Obtener Rol */
   async findOne(uuid: string): Promise<SuccessResponseDto<Role>> {
-    const role = await this.roleRepository.findOne({ where: { uuid } });
+    const role = await this.rolesRepository.findRoleByUuid(uuid);
 
     if (!role) {
       throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
@@ -128,7 +107,7 @@ export class RolesService {
     updateRoleDto: UpdateRoleDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Role>> {
-    const roleToUpdate = await this.roleRepository.findOne({ where: { uuid } });
+    const roleToUpdate = await this.rolesRepository.findRoleByUuid(uuid);
 
     if (!roleToUpdate)
       throw new NotFoundException(`Rol con uuid: ${uuid} no encontrada`);
@@ -136,7 +115,7 @@ export class RolesService {
     try {
       const oldData = { ...roleToUpdate };
       Object.assign(roleToUpdate, updateRoleDto);
-      const updatedRole = await this.roleRepository.save(roleToUpdate);
+      const updatedRole = await this.rolesRepository.saveRole(roleToUpdate);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.ROLES,
@@ -163,12 +142,12 @@ export class RolesService {
     uuid: string,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Role>> {
-    const role = await this.roleRepository.findOne({ where: { uuid } });
+    const role = await this.rolesRepository.findRoleByUuid(uuid);
 
     if (!role)
       throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
 
-    await this.roleRepository.softDelete({ uuid });
+    await this.rolesRepository.softDeleteRoleByUuid(uuid);
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.ROLES,
@@ -191,7 +170,13 @@ export class RolesService {
     userRoles.forEach((role) => {
       role.permissions.forEach((permission) => {
         const module = permission.module;
-        if (!module || !module.is_active) return;
+        if (
+          !permission.code.endsWith(':view') ||
+          !module ||
+          !module.is_active
+        ) {
+          return;
+        }
 
         const category = module.module_category;
         const categoryKey = category.uuid;
@@ -210,6 +195,7 @@ export class RolesService {
           categoryEntry.items.set(module.uuid, {
             icon: module.icon,
             name: module.name,
+            description: module.description,
             route: module.url,
             active: module.is_active,
           });
@@ -234,10 +220,7 @@ export class RolesService {
   async getPermissionsByRole(
     uuid: string,
   ): Promise<SuccessResponseDto<Permission[]>> {
-    const role = await this.roleRepository.findOne({
-      where: { uuid },
-      relations: ['permissions'],
-    });
+    const role = await this.rolesRepository.findRoleByUuidWithPermissions(uuid);
 
     if (!role) {
       throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
@@ -256,10 +239,7 @@ export class RolesService {
     updateRolePermissionsDto: UpdateRolePermissionsDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Permission[]>> {
-    const role = await this.roleRepository.findOne({
-      where: { uuid },
-      relations: ['permissions'],
-    });
+    const role = await this.rolesRepository.findRoleByUuidWithPermissions(uuid);
 
     if (!role)
       throw new NotFoundException(`Rol con uuid: ${uuid} no encontrada`);
@@ -267,14 +247,14 @@ export class RolesService {
     try {
       const oldPermissions = role.permissions.map((p) => p.uuid);
 
-      const permissions = await this.permissionRepository.findBy({
-        uuid: In(updateRolePermissionsDto.permissionUuids),
-        is_active: true,
-      });
+      const permissions =
+        await this.rolesRepository.findActivePermissionsByUuids(
+          updateRolePermissionsDto.permission_uuids,
+        );
 
       if (
         permissions.length !==
-        new Set(updateRolePermissionsDto.permissionUuids).size
+        new Set(updateRolePermissionsDto.permission_uuids).size
       ) {
         throw new BadRequestException(
           'Uno o más permisos no existen o están inactivos',
@@ -283,7 +263,7 @@ export class RolesService {
 
       role.permissions = permissions;
 
-      await this.roleRepository.save(role);
+      await this.rolesRepository.saveRole(role);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.ROLES,
@@ -292,7 +272,7 @@ export class RolesService {
         entityName: role.name,
         description: `Permisos actualizados para rol: ${role.name}`,
         oldData: { permissions: oldPermissions },
-        newData: { permissions: updateRolePermissionsDto.permissionUuids },
+        newData: { permissions: updateRolePermissionsDto.permission_uuids },
       });
 
       return new SuccessResponseDto(
@@ -306,19 +286,16 @@ export class RolesService {
   }
 
   async UsersByRole(uuid: string): Promise<SuccessResponseDto<User[]>> {
-    const role = await this.roleRepository.findOne({
-      where: { uuid },
-      relations: ['users'],
-    });
+    const role = await this.rolesRepository.findRoleByUuidWithUsers(uuid);
 
     if (!role) {
       throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
     }
-    
+
     return new SuccessResponseDto(
       true,
       'Usuarios obtenidos exitosamente!',
-      role.users,
+      role.user_roles.map((userRole) => userRole.user),
     );
   }
 }

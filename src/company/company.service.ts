@@ -4,8 +4,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import 'multer';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
 import { Company, CompanyStatus } from './entities/company.entity';
 import { CompanyFiscalAddress } from './entities/company-fiscal-address.entity';
 import { CompanyDocument } from './entities/company-document.entity';
@@ -24,39 +22,32 @@ import {
   PaginatedResponse,
   SuccessResponseDto,
 } from '../common/dto/success-response.dto';
+import { CompanyRepository } from './repositories/company.repository';
 
 @Injectable()
 export class CompanyService {
   constructor(
-    @InjectRepository(Company)
-    private readonly companyRepository: Repository<Company>,
-    @InjectRepository(CompanyFiscalAddress)
-    private readonly fiscalAddressRepository: Repository<CompanyFiscalAddress>,
-    @InjectRepository(CompanyDocument)
-    private readonly companyDocumentRepository: Repository<CompanyDocument>,
-    @InjectRepository(CompanyConfig)
-    private readonly companyConfigRepository: Repository<CompanyConfig>,
+    private readonly companyRepository: CompanyRepository,
     private readonly documentsService: DocumentsService,
-    private readonly dataSource: DataSource,
   ) {}
 
   // ============ COMPANY ============
   async create(dto: CreateCompanyDto): Promise<SuccessResponseDto<Company>> {
-    const existing = await this.companyRepository.findOne({
-      where: { code_activation: dto.code_activation },
-    });
+    const existing = await this.companyRepository.findCompanyByActivationCode(
+      dto.code_activation,
+    );
 
     if (existing) {
       throw new BadRequestException('El código de activación ya existe');
     }
 
-    const company = this.companyRepository.create({
+    const company = this.companyRepository.createCompany({
       uuid: uuidv4(),
       ...dto,
       status: CompanyStatus.PENDING_ACTIVATION,
     });
 
-    const saved = await this.companyRepository.save(company);
+    const saved = await this.companyRepository.saveCompany(company);
     return new SuccessResponseDto(true, 'Empresa creada exitosamente', saved);
   }
 
@@ -64,12 +55,8 @@ export class CompanyService {
     paginationDto: PaginationDto,
   ): Promise<PaginatedResponse<Company>> {
     const { limit = 10, page = 1 } = paginationDto;
-    const [companies, total] = await this.companyRepository.findAndCount({
-      relations: ['fiscal_addresses', 'documents', 'documents.document'],
-      take: limit,
-      skip: (page - 1) * limit,
-      order: { created_at: 'DESC' },
-    });
+    const [companies, total] =
+      await this.companyRepository.findCompanies(paginationDto);
 
     return PaginatedResponse.create(
       companies,
@@ -81,10 +68,8 @@ export class CompanyService {
   }
 
   async findOne(uuid: string): Promise<SuccessResponseDto<Company>> {
-    const company = await this.companyRepository.findOne({
-      where: { uuid },
-      relations: ['fiscal_addresses', 'documents', 'documents.document'],
-    });
+    const company =
+      await this.companyRepository.findCompanyByUuidWithRelations(uuid);
 
     if (!company) {
       throw new NotFoundException(`Empresa con uuid ${uuid} no encontrada`);
@@ -97,14 +82,14 @@ export class CompanyService {
     uuid: string,
     dto: UpdateCompanyDto,
   ): Promise<SuccessResponseDto<Company>> {
-    const company = await this.companyRepository.findOne({ where: { uuid } });
+    const company = await this.companyRepository.findCompanyByUuid(uuid);
 
     if (!company) {
       throw new NotFoundException(`Empresa con uuid ${uuid} no encontrada`);
     }
 
     Object.assign(company, dto);
-    const updated = await this.companyRepository.save(company);
+    const updated = await this.companyRepository.saveCompany(company);
 
     return new SuccessResponseDto(
       true,
@@ -114,13 +99,13 @@ export class CompanyService {
   }
 
   async remove(uuid: string): Promise<SuccessResponseDto<Company>> {
-    const company = await this.companyRepository.findOne({ where: { uuid } });
+    const company = await this.companyRepository.findCompanyByUuid(uuid);
 
     if (!company) {
       throw new NotFoundException(`Empresa con uuid ${uuid} no encontrada`);
     }
 
-    await this.companyRepository.softDelete({ uuid });
+    await this.companyRepository.softDeleteCompanyByUuid(uuid);
 
     return new SuccessResponseDto(
       true,
@@ -134,80 +119,53 @@ export class CompanyService {
     companyUuid: string,
     dto: CreateFiscalAddressDto,
   ): Promise<SuccessResponseDto<CompanyFiscalAddress>> {
-    return this.dataSource.transaction(async (manager) => {
-      const company = await manager.findOne(Company, {
-        where: { uuid: companyUuid },
-      });
-
-      if (!company) {
-        throw new NotFoundException(
-          `Empresa con uuid ${companyUuid} no encontrada`,
-        );
-      }
-
-      if (dto.is_default) {
-        await manager.update(
-          CompanyFiscalAddress,
-          { company_id: company.id },
-          { is_default: false },
-        );
-      }
-
-      const address = manager.create(CompanyFiscalAddress, {
-        uuid: uuidv4(),
-        ...dto,
-        company_id: company.id,
-      });
-
-      const saved = await manager.save(address);
-      return new SuccessResponseDto(
-        true,
-        'Dirección fiscal creada exitosamente',
-        saved,
+    const { company, address } =
+      await this.companyRepository.createFiscalAddressInTransaction(
+        companyUuid,
+        { uuid: uuidv4(), ...dto },
       );
-    });
+
+    if (!company || !address) {
+      throw new NotFoundException(
+        `Empresa con uuid ${companyUuid} no encontrada`,
+      );
+    }
+
+    return new SuccessResponseDto(
+      true,
+      'Dirección fiscal creada exitosamente',
+      address,
+    );
   }
 
   async updateFiscalAddress(
     addressUuid: string,
     dto: Partial<CreateFiscalAddressDto>,
   ): Promise<SuccessResponseDto<CompanyFiscalAddress>> {
-    return this.dataSource.transaction(async (manager) => {
-      const address = await manager.findOne(CompanyFiscalAddress, {
-        where: { uuid: addressUuid },
-      });
-
-      if (!address) {
-        throw new NotFoundException(
-          `Dirección fiscal con uuid ${addressUuid} no encontrada`,
-        );
-      }
-
-      if (dto.is_default) {
-        await manager.update(
-          CompanyFiscalAddress,
-          { company_id: address.company_id },
-          { is_default: false },
-        );
-      }
-
-      Object.assign(address, dto);
-      const updated = await manager.save(address);
-
-      return new SuccessResponseDto(
-        true,
-        'Dirección fiscal actualizada',
-        updated,
+    const updated =
+      await this.companyRepository.updateFiscalAddressInTransaction(
+        addressUuid,
+        dto,
       );
-    });
+
+    if (!updated) {
+      throw new NotFoundException(
+        `Dirección fiscal con uuid ${addressUuid} no encontrada`,
+      );
+    }
+
+    return new SuccessResponseDto(
+      true,
+      'Dirección fiscal actualizada',
+      updated,
+    );
   }
 
   async deleteFiscalAddress(
     addressUuid: string,
   ): Promise<SuccessResponseDto<CompanyFiscalAddress>> {
-    const address = await this.fiscalAddressRepository.findOne({
-      where: { uuid: addressUuid },
-    });
+    const address =
+      await this.companyRepository.findFiscalAddressByUuid(addressUuid);
 
     if (!address) {
       throw new NotFoundException(
@@ -215,7 +173,7 @@ export class CompanyService {
       );
     }
 
-    await this.fiscalAddressRepository.softDelete({ uuid: addressUuid });
+    await this.companyRepository.softDeleteFiscalAddressByUuid(addressUuid);
 
     return new SuccessResponseDto(true, 'Dirección fiscal eliminada', address);
   }
@@ -223,9 +181,7 @@ export class CompanyService {
   async getDefaultFiscalAddress(
     companyUuid: string,
   ): Promise<SuccessResponseDto<CompanyFiscalAddress>> {
-    const company = await this.companyRepository.findOne({
-      where: { uuid: companyUuid },
-    });
+    const company = await this.companyRepository.findCompanyByUuid(companyUuid);
 
     if (!company) {
       throw new NotFoundException(
@@ -233,15 +189,12 @@ export class CompanyService {
       );
     }
 
-    let address = await this.fiscalAddressRepository.findOne({
-      where: { company_id: company.id, is_default: true },
-    });
+    let address = await this.companyRepository.findDefaultFiscalAddress(
+      company.id,
+    );
 
     if (!address) {
-      address = await this.fiscalAddressRepository.findOne({
-        where: { company_id: company.id },
-        order: { created_at: 'ASC' },
-      });
+      address = await this.companyRepository.findFirstFiscalAddress(company.id);
     }
 
     if (!address) {
@@ -261,9 +214,7 @@ export class CompanyService {
     file: Express.Multer.File,
     dto: UploadCompanyDocumentDto,
   ): Promise<SuccessResponseDto<CompanyDocument>> {
-    const company = await this.companyRepository.findOne({
-      where: { uuid: companyUuid },
-    });
+    const company = await this.companyRepository.findCompanyByUuid(companyUuid);
 
     if (!company) {
       throw new NotFoundException(
@@ -279,13 +230,10 @@ export class CompanyService {
     });
 
     if (dto.is_default) {
-      await this.companyDocumentRepository.update(
-        { company_id: company.id },
-        { is_default: false },
-      );
+      await this.companyRepository.clearDefaultCompanyDocuments(company.id);
     }
 
-    const companyDocument = this.companyDocumentRepository.create({
+    const companyDocument = this.companyRepository.createCompanyDocument({
       uuid: uuidv4(),
       company_id: company.id,
       document_id: uploadResult.document.id,
@@ -293,7 +241,8 @@ export class CompanyService {
       description: dto.description,
     });
 
-    const saved = await this.companyDocumentRepository.save(companyDocument);
+    const saved =
+      await this.companyRepository.saveCompanyDocument(companyDocument);
 
     return new SuccessResponseDto(true, 'Documento subido exitosamente', saved);
   }
@@ -301,10 +250,8 @@ export class CompanyService {
   async deleteDocument(
     documentUuid: string,
   ): Promise<SuccessResponseDto<CompanyDocument>> {
-    const companyDocument = await this.companyDocumentRepository.findOne({
-      where: { uuid: documentUuid },
-      relations: ['document'],
-    });
+    const companyDocument =
+      await this.companyRepository.findCompanyDocumentByUuid(documentUuid);
 
     if (!companyDocument) {
       throw new NotFoundException(
@@ -313,7 +260,7 @@ export class CompanyService {
     }
 
     await this.documentsService.deleteByUuid(companyDocument.document.uuid);
-    await this.companyDocumentRepository.softDelete({ uuid: documentUuid });
+    await this.companyRepository.softDeleteCompanyDocumentByUuid(documentUuid);
 
     return new SuccessResponseDto(true, 'Documento eliminado', companyDocument);
   }
@@ -321,9 +268,7 @@ export class CompanyService {
   async getDocuments(
     companyUuid: string,
   ): Promise<SuccessResponseDto<CompanyDocument[]>> {
-    const company = await this.companyRepository.findOne({
-      where: { uuid: companyUuid },
-    });
+    const company = await this.companyRepository.findCompanyByUuid(companyUuid);
 
     if (!company) {
       throw new NotFoundException(
@@ -331,11 +276,9 @@ export class CompanyService {
       );
     }
 
-    const documents = await this.companyDocumentRepository.find({
-      where: { company_id: company.id },
-      relations: ['document'],
-      order: { created_at: 'DESC' },
-    });
+    const documents = await this.companyRepository.findCompanyDocuments(
+      company.id,
+    );
 
     return new SuccessResponseDto(true, 'Documentos obtenidos', documents);
   }
@@ -345,9 +288,7 @@ export class CompanyService {
     companyUuid: string,
     dto: CreateCompanyConfigDto,
   ): Promise<SuccessResponseDto<CompanyConfig>> {
-    const company = await this.companyRepository.findOne({
-      where: { uuid: companyUuid },
-    });
+    const company = await this.companyRepository.findCompanyByUuid(companyUuid);
 
     if (!company) {
       throw new NotFoundException(
@@ -355,9 +296,10 @@ export class CompanyService {
       );
     }
 
-    const existingConfig = await this.companyConfigRepository.findOne({
-      where: { company_id: company.id, key: dto.key },
-    });
+    const existingConfig = await this.companyRepository.findCompanyConfigByKey(
+      company.id,
+      dto.key,
+    );
 
     if (existingConfig) {
       throw new BadRequestException(
@@ -365,13 +307,13 @@ export class CompanyService {
       );
     }
 
-    const config = this.companyConfigRepository.create({
+    const config = this.companyRepository.createCompanyConfig({
       uuid: uuidv4(),
       ...dto,
       company_id: company.id,
     });
 
-    const saved = await this.companyConfigRepository.save(config);
+    const saved = await this.companyRepository.saveCompanyConfig(config);
     return new SuccessResponseDto(true, 'Configuración creada', saved);
   }
 
@@ -379,9 +321,8 @@ export class CompanyService {
     configUuid: string,
     dto: UpdateCompanyConfigDto,
   ): Promise<SuccessResponseDto<CompanyConfig>> {
-    const config = await this.companyConfigRepository.findOne({
-      where: { uuid: configUuid },
-    });
+    const config =
+      await this.companyRepository.findCompanyConfigByUuid(configUuid);
 
     if (!config) {
       throw new NotFoundException(
@@ -390,7 +331,7 @@ export class CompanyService {
     }
 
     Object.assign(config, dto);
-    const updated = await this.companyConfigRepository.save(config);
+    const updated = await this.companyRepository.saveCompanyConfig(config);
 
     return new SuccessResponseDto(true, 'Configuración actualizada', updated);
   }
@@ -398,9 +339,7 @@ export class CompanyService {
   async getConfigs(
     companyUuid: string,
   ): Promise<SuccessResponseDto<CompanyConfig[]>> {
-    const company = await this.companyRepository.findOne({
-      where: { uuid: companyUuid },
-    });
+    const company = await this.companyRepository.findCompanyByUuid(companyUuid);
 
     if (!company) {
       throw new NotFoundException(
@@ -408,10 +347,9 @@ export class CompanyService {
       );
     }
 
-    const configs = await this.companyConfigRepository.find({
-      where: { company_id: company.id, is_active: true },
-      order: { key: 'ASC' },
-    });
+    const configs = await this.companyRepository.findActiveCompanyConfigs(
+      company.id,
+    );
 
     return new SuccessResponseDto(true, 'Configuraciones obtenidas', configs);
   }
@@ -420,9 +358,10 @@ export class CompanyService {
     companyUuid: string,
     key: string,
   ): Promise<string | null> {
-    const config = await this.companyConfigRepository.findOne({
-      where: { company: { uuid: companyUuid }, key, is_active: true },
-    });
+    const config = await this.companyRepository.findActiveCompanyConfigValue(
+      companyUuid,
+      key,
+    );
 
     return config?.value || null;
   }
@@ -430,9 +369,8 @@ export class CompanyService {
   async deleteConfig(
     configUuid: string,
   ): Promise<SuccessResponseDto<CompanyConfig>> {
-    const config = await this.companyConfigRepository.findOne({
-      where: { uuid: configUuid },
-    });
+    const config =
+      await this.companyRepository.findCompanyConfigByUuid(configUuid);
 
     if (!config) {
       throw new NotFoundException(
@@ -440,7 +378,7 @@ export class CompanyService {
       );
     }
 
-    await this.companyConfigRepository.softDelete({ uuid: configUuid });
+    await this.companyRepository.softDeleteCompanyConfigByUuid(configUuid);
 
     return new SuccessResponseDto(true, 'Configuración eliminada', config);
   }

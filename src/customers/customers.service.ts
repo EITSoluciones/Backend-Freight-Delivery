@@ -1,16 +1,8 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Repository,
-  QueryFailedError,
-  FindManyOptions,
-  Between,
-} from 'typeorm';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -24,15 +16,17 @@ import { LogsService } from 'src/logs/logs.service';
 import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogAction } from 'src/logs/enums/log-action.enum';
 import { User } from 'src/users/entities/user.entity';
+import { CustomersRepository } from './repositories/customers.repository';
+import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
+import { AddressesRepository } from 'src/addresses/repositories/addresses.repository';
 
 @Injectable()
 export class CustomersService {
   constructor(
-    @InjectRepository(Customer)
-    private readonly customerRepository: Repository<Customer>,
-    @InjectRepository(Address)
-    private readonly addressRepository: Repository<Address>,
+    private readonly customersRepository: CustomersRepository,
+    private readonly addressesRepository: AddressesRepository,
     private readonly logsService: LogsService,
+    private readonly dbErrorHandler: DBErrorHandlerService,
   ) {}
 
   async create(
@@ -47,7 +41,7 @@ export class CustomersService {
 
     this.ensureSinglePrimaryAddress(addresses);
 
-    const customer = this.customerRepository.create({
+    const customer = this.customersRepository.create({
       ...customerData,
       addresses: addresses.map((addr) => ({
         ...addr,
@@ -56,7 +50,7 @@ export class CustomersService {
     });
 
     try {
-      const savedCustomer = await this.customerRepository.save(customer);
+      const savedCustomer = await this.customersRepository.save(customer);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.CUSTOMERS,
@@ -73,26 +67,16 @@ export class CustomersService {
         savedCustomer,
       );
     } catch (error) {
-      this.handleDBErrors(error);
+      this.dbErrorHandler.handleDBErrors(error);
     }
   }
 
   async findAll(
     queryCustomerDto: QueryCustomerDto,
   ): Promise<PaginatedResponse<Customer>> {
-    const { limit = 10, page = 1, startDate, endDate } = queryCustomerDto;
-
-    const where: FindManyOptions<Customer>['where'] = {};
-
-    if (startDate && endDate) {
-      where.created_at = Between(new Date(startDate), new Date(endDate));
-    }
-
-    const [customers, total] = await this.customerRepository.findAndCount({
-      where,
-      take: limit,
-      skip: (page - 1) * limit,
-    });
+    const { limit = 10, page = 1 } = queryCustomerDto;
+    const [customers, total] =
+      await this.customersRepository.findAll(queryCustomerDto);
 
     return PaginatedResponse.create(
       customers,
@@ -113,19 +97,12 @@ export class CustomersService {
     updateCustomerDto: UpdateCustomerDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Customer>> {
-    const customer = await this.customerRepository.findOne({
-      where: { uuid },
-      relations: { addresses: true },
-    });
-
-    if (!customer) {
-      throw new NotFoundException(`Customer with uuid ${uuid} not found!`);
-    }
+    const customer = await this.getCustomerByUuidWithAddresses(uuid);
 
     const oldData = { ...customer };
     const { addresses, ...customerData } = updateCustomerDto;
 
-    this.customerRepository.merge(customer, customerData);
+    this.customersRepository.merge(customer, customerData);
 
     if (addresses !== undefined) {
       this.ensureSinglePrimaryAddress(addresses);
@@ -141,7 +118,7 @@ export class CustomersService {
           const existingAddress = existingAddressesMap.get(addressDto.uuid);
 
           if (existingAddress) {
-            this.addressRepository.merge(existingAddress, addressDto);
+            this.addressesRepository.merge(existingAddress, addressDto);
             existingAddress.customer = customer;
             processedAddresses.push(existingAddress);
             existingAddressesMap.delete(addressDto.uuid);
@@ -151,7 +128,7 @@ export class CustomersService {
             );
           }
         } else {
-          const newAddress = this.addressRepository.create({
+          const newAddress = this.addressesRepository.create({
             ...addressDto,
             customer,
           });
@@ -160,11 +137,11 @@ export class CustomersService {
         }
       }
 
-      await this.addressRepository.save(processedAddresses);
+      await this.addressesRepository.saveMany(processedAddresses);
     }
 
     try {
-      await this.customerRepository.save(customer);
+      await this.customersRepository.save(customer);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.CUSTOMERS,
@@ -182,7 +159,7 @@ export class CustomersService {
         await this.getCustomerByUuid(uuid),
       );
     } catch (error) {
-      this.handleDBErrors(error);
+      this.dbErrorHandler.handleDBErrors(error);
     }
   }
 
@@ -191,7 +168,7 @@ export class CustomersService {
     currentUser?: User,
   ): Promise<SuccessResponseDto<Customer>> {
     const customer = await this.getCustomerByUuid(uuid);
-    await this.customerRepository.softRemove(customer);
+    await this.customersRepository.softRemove(customer);
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.CUSTOMERS,
@@ -210,16 +187,22 @@ export class CustomersService {
   }
 
   async getCustomerByUuid(uuid: string): Promise<Customer> {
-    const customer = await this.customerRepository
-      .createQueryBuilder('customer')
-      .leftJoinAndSelect(
-        'customer.addresses',
-        'address',
-        'address.is_active = :isActive AND address.deleted_at IS NULL',
-        { isActive: true },
-      )
-      .where('customer.uuid = :uuid', { uuid })
-      .getOne();
+    const customer =
+      await this.customersRepository.findByUuidWithActiveAddresses(uuid);
+
+    if (!customer) {
+      throw new NotFoundException(`Customer with uuid ${uuid} not found!`);
+    }
+
+    return customer;
+  }
+
+  private async getCustomerByUuidWithAddresses(
+    uuid: string,
+  ): Promise<Customer> {
+    const customer =
+      await this.customersRepository.findByUuidWithAddresses(uuid);
+
     if (!customer) {
       throw new NotFoundException(`Customer with uuid ${uuid} not found!`);
     }
@@ -239,29 +222,5 @@ export class CustomersService {
     if (primaryAddresses === 0 && addresses.length > 0) {
       addresses[0].is_primary = true;
     }
-  }
-
-  private handleDBErrors(error: any): never {
-    if (
-      error instanceof NotFoundException ||
-      error instanceof BadRequestException
-    ) {
-      throw error;
-    }
-
-    if (error instanceof QueryFailedError) {
-      if ((error as any).errno === 1062) {
-        throw new BadRequestException(
-          (error as any).detail ||
-            (error as any).sqlMessage ||
-            'Duplicate entry',
-        );
-      }
-    }
-
-    console.error(error);
-    throw new InternalServerErrorException(
-      'Server Error. Please contact the system administrator!',
-    );
   }
 }

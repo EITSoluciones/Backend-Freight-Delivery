@@ -4,10 +4,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { LogsService } from './logs.service';
 import { LogsController } from './logs.controller';
 import { SystemLog } from './entities/system-log.entity';
+import { LogsRepository } from './repositories/logs.repository';
 
 @Module({
   controllers: [LogsController],
-  providers: [LogsService],
+  providers: [LogsService, LogsRepository],
   imports: [
     TypeOrmModule.forFeature([SystemLog]),
     EventEmitterModule.forRoot(),

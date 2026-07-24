@@ -26,7 +26,7 @@ export async function seedUsers(dataSource: DataSource) {
       is_active: true,
     },
   ];
- 
+
   for (const item of users) {
     const existing = await repo.findOneBy({ username: item.username });
     const hashedPassword = await bcrypt.hash(item.password, 10);

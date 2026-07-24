@@ -16,10 +16,7 @@ import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import * as path from 'path';
 import { AppConfigService } from './app-config.service';
-import {
-  SaveAppConfigFormDataDto,
-  ValidateActivationCodeDto,
-} from './dto';
+import { SaveAppConfigFormDataDto, ValidateActivationCodeDto } from './dto';
 
 import { Auth, GetUser } from '../auth/decorators';
 import { Permissions } from '../auth/interfaces';
@@ -41,14 +38,18 @@ export class AppConfigController {
   }
 
   @Get('public/:uuid')
-  @ApiOperation({ summary: 'Obtener una configuración pública activa por uuid' })
+  @ApiOperation({
+    summary: 'Obtener una configuración pública activa por uuid',
+  })
   findOnePublic(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return this.appConfigService.findOnePublic(uuid);
   }
 
   @Post('validate-activation')
   @ApiOperation({ summary: 'Validar código de activación' })
-  validateActivation(@Body() validateActivationCodeDto: ValidateActivationCodeDto) {
+  validateActivation(
+    @Body() validateActivationCodeDto: ValidateActivationCodeDto,
+  ) {
     return this.appConfigService.validateActivationCode(
       validateActivationCodeDto.code,
     );
@@ -107,16 +108,12 @@ export class AppConfigController {
   }
 
   @Get('public/file/:type')
-  async getPublicConfigFile(
-    @Param('type') type: string,
-    @Res() res: Response,
-  ) {
+  async getPublicConfigFile(@Param('type') type: string, @Res() res: Response) {
     const fileData = await this.appConfigService.getPublicConfigFile(type);
 
-  const absolutePath = path.resolve(process.cwd(), fileData.absolutePath);
+    const absolutePath = path.resolve(process.cwd(), fileData.absolutePath);
 
-  res.setHeader('Content-Type', fileData.document.mime_type);
-  return res.sendFile(absolutePath);
-
+    res.setHeader('Content-Type', fileData.document.mime_type);
+    return res.sendFile(absolutePath);
   }
 }

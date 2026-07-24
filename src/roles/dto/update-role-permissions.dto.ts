@@ -1,9 +1,7 @@
-import { IsOptional, IsString, MaxLength, IsBoolean, IsUUID } from 'class-validator';
+import { IsArray, IsUUID } from 'class-validator';
 
 export class UpdateRolePermissionsDto {
-
-  @IsOptional()
+  @IsArray()
   @IsUUID('4', { each: true })
-  permissionUuids: string[];
-  
+  permission_uuids!: string[];
 }

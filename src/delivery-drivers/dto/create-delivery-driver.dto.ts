@@ -1,58 +1,69 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsDateString,
   IsNotEmpty,
-  IsNumber,
+  IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
 
 export class CreateDeliveryDriverDto {
-  @ApiProperty({ example: 1 })
-  @IsNotEmpty()
-  user_uuid!: string;
-
+  @ApiPropertyOptional({
+    example: '0f4e8f7b-8f4f-469d-9fea-f64a0e7db7e9',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsUUID()
+  user_uuid?: string | null;
 
   @ApiProperty({ example: '8123456789' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(20)
-  phone?: string;
+  phone!: string;
+
+  @ApiProperty({ example: '+52' })
+  @IsNotEmpty()
+  @IsString()
+  @MaxLength(8)
+  country_code!: string;
 
   @ApiProperty({ example: 'internal' })
   @IsNotEmpty()
   @IsString()
-  driver_type?: string;
+  driver_type!: string;
 
   @ApiProperty({ example: 'ine' })
   @IsNotEmpty()
   @IsString()
-  document_type?: string;
+  identity_document_type!: string;
 
   @ApiProperty({ example: 'ABCD123456EFG' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(50)
-  document_number?: string;
+  identity_document_number!: string;
 
   @ApiProperty({ example: 'chofer' })
   @IsNotEmpty()
   @IsString()
-  license_type?: string;
+  license_type!: string;
 
   @ApiProperty({ example: 'ABC123456789' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(50)
-  license_number?: string;
+  license_number!: string;
 
   @ApiProperty({ example: '2026-12-31' })
   @IsNotEmpty()
   @IsDateString()
-  license_expiration?: string;
+  license_expiration!: string;
 
-  @ApiProperty({ example: '1' })
+  @ApiProperty({ example: true })
   @IsNotEmpty()
-  @IsString()
-   is_active?: boolean;
-  }
+  @IsBoolean()
+  is_active!: boolean;
+}

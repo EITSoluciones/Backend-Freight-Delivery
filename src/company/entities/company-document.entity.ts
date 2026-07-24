@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -35,6 +36,7 @@ export class CompanyDocument {
   @ManyToOne(() => Company, (company) => company.documents, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'company_id' })
   company!: Company;
 
   @Column({ type: 'int' })

@@ -11,7 +11,7 @@ export class CreateProductDto {
   @ApiProperty({ example: 'Camión de carga' })
   @IsNotEmpty()
   @IsString()
-  nombre: string;
+  nombre!: string;
 
   @ApiProperty({ example: 'Camión de carga de 5 toneladas', required: false })
   @IsOptional()
@@ -22,5 +22,5 @@ export class CreateProductDto {
   @IsNotEmpty()
   @IsNumber()
   @Min(0)
-  stock: number;
+  stock!: number;
 }

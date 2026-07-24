@@ -1,6 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ModuleCategory } from './entities/module-category.entity';
 import { CreateModuleCategoryDto } from './dto/create-module-category.dto';
 import { UpdateModuleCategoryDto } from './dto/update-module-category.dto';
@@ -10,23 +8,23 @@ import {
   PaginatedResponse,
   SuccessResponseDto,
 } from 'src/common/dto/success-response.dto';
+import { ModuleCategoriesRepository } from './repositories/module-categories.repository';
 
 @Injectable()
 export class ModuleCategoriesService {
   constructor(
-    @InjectRepository(ModuleCategory)
-    private readonly moduleCategoryRepository: Repository<ModuleCategory>,
+    private readonly moduleCategoriesRepository: ModuleCategoriesRepository,
     private readonly dbErrorHandler: DBErrorHandlerService,
   ) {}
 
   async create(
     createModuleCategoryDto: CreateModuleCategoryDto,
   ): Promise<SuccessResponseDto<ModuleCategory>> {
-    const moduleCategory = this.moduleCategoryRepository.create(
+    const moduleCategory = this.moduleCategoriesRepository.create(
       createModuleCategoryDto,
     );
     const savedModuleCategory =
-      await this.moduleCategoryRepository.save(moduleCategory);
+      await this.moduleCategoriesRepository.save(moduleCategory);
 
     return new SuccessResponseDto(
       true,
@@ -41,18 +39,8 @@ export class ModuleCategoriesService {
     const { limit = 10, page = 1, is_active } = paginationDto;
     const offset = (page - 1) * limit;
 
-    const bool = is_active === 'true';
-
-    const where = {
-      ...(bool !== undefined && { is_active: bool }),
-    };
-
     const [moduleCategories, total] =
-      await this.moduleCategoryRepository.findAndCount({
-        where,
-        take: limit,
-        skip: offset,
-      });
+      await this.moduleCategoriesRepository.findAll(paginationDto);
 
     return PaginatedResponse.create(
       moduleCategories,
@@ -64,9 +52,8 @@ export class ModuleCategoriesService {
   }
 
   async findOne(uuid: string): Promise<SuccessResponseDto<ModuleCategory>> {
-    const moduleCategory = await this.moduleCategoryRepository.findOne({
-      where: { uuid },
-    });
+    const moduleCategory =
+      await this.moduleCategoriesRepository.findByUuid(uuid);
 
     if (!moduleCategory) {
       throw new NotFoundException(
@@ -85,9 +72,8 @@ export class ModuleCategoriesService {
     uuid: string,
     updateModuleCategoryDto: UpdateModuleCategoryDto,
   ): Promise<SuccessResponseDto<ModuleCategory>> {
-    const moduleCategoryToUpdate = await this.moduleCategoryRepository.findOne({
-      where: { uuid },
-    });
+    const moduleCategoryToUpdate =
+      await this.moduleCategoriesRepository.findByUuid(uuid);
 
     if (!moduleCategoryToUpdate)
       throw new NotFoundException(
@@ -95,7 +81,7 @@ export class ModuleCategoriesService {
       );
 
     Object.assign(moduleCategoryToUpdate, updateModuleCategoryDto);
-    const updatedModuleCategory = await this.moduleCategoryRepository.save(
+    const updatedModuleCategory = await this.moduleCategoriesRepository.save(
       moduleCategoryToUpdate,
     );
 
@@ -107,16 +93,15 @@ export class ModuleCategoriesService {
   }
 
   async remove(uuid: string): Promise<SuccessResponseDto<ModuleCategory>> {
-    const moduleCategory = await this.moduleCategoryRepository.findOne({
-      where: { uuid },
-    });
+    const moduleCategory =
+      await this.moduleCategoriesRepository.findByUuid(uuid);
 
     if (!moduleCategory)
       throw new NotFoundException(
         `La categoría de módulo con uuid ${uuid} no se encontró!`,
       );
 
-    await this.moduleCategoryRepository.softDelete({ uuid });
+    await this.moduleCategoriesRepository.softDeleteByUuid(uuid);
 
     return new SuccessResponseDto(
       true,
@@ -126,9 +111,7 @@ export class ModuleCategoriesService {
   }
 
   async getCategoriesCatalog(): Promise<SuccessResponseDto<ModuleCategory[]>> {
-    const categories = await this.moduleCategoryRepository.find({
-      where: { is_active: true },
-    });
+    const categories = await this.moduleCategoriesRepository.findActive();
     return new SuccessResponseDto(
       true,
       'Categorías obtenidos exitosamente!',

@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -74,6 +75,7 @@ export class CompanyFiscalAddress {
   @ManyToOne(() => Company, (company) => company.fiscal_addresses, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'company_id' })
   company!: Company;
 
   @Column({ type: 'int' })

@@ -17,7 +17,7 @@ export class SaveAppConfigFormDataDto {
   })
   @IsOptional()
   @Allow()
-  logo?: any;
+  logo?: Express.Multer.File;
 
   @ApiPropertyOptional({
     type: 'string',
@@ -26,5 +26,5 @@ export class SaveAppConfigFormDataDto {
   })
   @IsOptional()
   @Allow()
-  favicon?: any;
+  favicon?: Express.Multer.File;
 }

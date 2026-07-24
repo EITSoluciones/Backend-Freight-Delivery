@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { DeliveryVehicle } from 'src/delivery-vehicles/entities/delivery-vehicle.entity';
+import { DeliveryVehicleAssignment } from 'src/delivery-vehicles/entities/delivery-vehicle-assignment.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   BeforeInsert,
@@ -25,11 +25,14 @@ export class DeliveryDriver {
   uuid!: string;
 
   @Exclude()
-  @Column({ type: 'int', name: 'user_id', unique: true })
-  user_id!: number;
+  @Column({ type: 'int', name: 'user_id', unique: true, nullable: true })
+  user_id!: number | null;
 
   @Column({ length: 20 })
   phone!: string;
+
+  @Column({ name: 'country_code', length: 8, default: '+52' })
+  country_code!: string;
 
   @Column({ name: 'driver_type', length: 20 })
   driver_type!: string;
@@ -66,12 +69,15 @@ export class DeliveryDriver {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deleted_at?: Date | null;
 
-  @OneToOne(() => User)
+  @OneToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user!: User;
+  user!: User | null;
 
-  @OneToMany(() => DeliveryVehicle, (vehicle) => vehicle.delivery_driver)
-  vehicles!: DeliveryVehicle[];
+  @OneToMany(
+    () => DeliveryVehicleAssignment,
+    (assignment) => assignment.delivery_driver,
+  )
+  vehicle_assignments!: DeliveryVehicleAssignment[];
 
   @BeforeInsert()
   generateUuid() {

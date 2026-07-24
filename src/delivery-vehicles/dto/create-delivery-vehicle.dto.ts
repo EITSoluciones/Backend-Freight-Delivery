@@ -15,36 +15,36 @@ export class CreateDeliveryVehicleDto {
   @ApiProperty({ example: '0f4e8f7b-8f4f-469d-9fea-f64a0e7db7e9' })
   @IsNotEmpty()
   @IsUUID()
-  delivery_driver_uuid: string;
+  delivery_driver_uuid!: string;
 
   @ApiProperty({ example: 'Unidad Norte 01' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(100)
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: 'Nissan' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(100)
-  brand: string;
+  brand!: string;
 
   @ApiProperty({ example: 'March' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(100)
-  model: string;
+  model!: string;
 
   @ApiProperty({ example: 'ABC1234' })
   @IsNotEmpty()
   @IsString()
   @MaxLength(20)
-  plate_number: string;
+  plate_number!: string;
 
   @ApiProperty({ example: 'car' })
   @IsNotEmpty()
   @IsString()
-  vehicle_type: string;
+  vehicle_type!: string;
 
   @ApiPropertyOptional({ example: 'Blanco' })
   @IsOptional()

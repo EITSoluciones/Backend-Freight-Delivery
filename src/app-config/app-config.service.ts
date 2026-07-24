@@ -3,16 +3,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
 import { AppConfig } from './entities/app-config.entity';
-import {
-  SaveAppConfigFormDataDto,
-  UpdateAppConfigDto,
-} from './dto';
+import { SaveAppConfigFormDataDto, UpdateAppConfigDto } from './dto';
 
 import { SuccessResponseDto } from '../common/dto/success-response.dto';
 import { User } from 'src/users/entities/user.entity';
@@ -27,6 +22,7 @@ import {
   ALLOWED_IMAGE_MIME_TYPES,
   MAX_IMAGE_SIZE,
 } from 'src/documents/enums/document-extensions.const';
+import { AppConfigRepository } from './repositories/app-config.repository';
 
 type AppConfigUploadType = 'logo' | 'favicon';
 
@@ -47,20 +43,13 @@ export class AppConfigService {
   private readonly FILE_KEYS: AppConfigUploadType[] = ['logo', 'favicon'];
 
   constructor(
-    @InjectRepository(AppConfig)
-    private readonly appConfigRepository: Repository<AppConfig>,
+    private readonly appConfigRepository: AppConfigRepository,
     private readonly logsService: LogsService,
     private readonly documentsService: DocumentsService,
   ) {}
 
   async findAllPublic(): Promise<SuccessResponseDto<AppConfig[]>> {
-    const configs = await this.appConfigRepository.find({
-      where: {
-        is_public: true,
-        is_active: true,
-      },
-      order: { key: 'ASC' },
-    });
+    const configs = await this.appConfigRepository.findPublicActive();
 
     return new SuccessResponseDto(
       true,
@@ -70,13 +59,7 @@ export class AppConfigService {
   }
 
   async findOnePublic(uuid: string): Promise<SuccessResponseDto<AppConfig>> {
-    const config = await this.appConfigRepository.findOne({
-      where: {
-        uuid,
-        is_public: true,
-        is_active: true,
-      },
-    });
+    const config = await this.appConfigRepository.findPublicActiveByUuid(uuid);
 
     if (!config) {
       throw new NotFoundException(
@@ -92,9 +75,7 @@ export class AppConfigService {
   }
 
   async findAllAdmin(): Promise<SuccessResponseDto<AppConfig[]>> {
-    const configs = await this.appConfigRepository.find({
-      order: { key: 'ASC' },
-    });
+    const configs = await this.appConfigRepository.findAllAdmin();
 
     return new SuccessResponseDto(
       true,
@@ -104,9 +85,7 @@ export class AppConfigService {
   }
 
   async findOneAdmin(uuid: string): Promise<SuccessResponseDto<AppConfig>> {
-    const config = await this.appConfigRepository.findOne({
-      where: { uuid },
-    });
+    const config = await this.appConfigRepository.findByUuid(uuid);
 
     if (!config) {
       throw new NotFoundException(
@@ -118,12 +97,7 @@ export class AppConfigService {
   }
 
   async findByKey(key: string): Promise<string | null> {
-    const config = await this.appConfigRepository.findOne({
-      where: {
-        key,
-        is_active: true,
-      },
-    });
+    const config = await this.appConfigRepository.findActiveByKey(key);
 
     return config?.value ?? null;
   }
@@ -139,12 +113,9 @@ export class AppConfigService {
       );
     }
 
-    const activationConfig = await this.appConfigRepository.findOne({
-      where: {
-        key: this.ACTIVATION_CODE_KEY,
-        is_active: true,
-      },
-    });
+    const activationConfig = await this.appConfigRepository.findActiveByKey(
+      this.ACTIVATION_CODE_KEY,
+    );
 
     const isValid = activationConfig?.value?.trim() === normalizedCode;
 
@@ -181,12 +152,9 @@ export class AppConfigService {
       );
     }
 
-    const existingConfigs = await this.appConfigRepository.find({
-      where: {
-        uuid: In([...uniqueUuids]),
-      },
-      order: { key: 'ASC' },
-    });
+    const existingConfigs = await this.appConfigRepository.findByUuids([
+      ...uniqueUuids,
+    ]);
 
     const existingByUuid = new Map<string, AppConfig>(
       existingConfigs.map((config) => [config.uuid, config]),
@@ -282,35 +250,29 @@ export class AppConfigService {
         configsToSave.push(merged);
       }
 
-      const savedConfigs = await this.appConfigRepository.manager.transaction(
-        async (manager) => {
-          const repository = manager.getRepository(AppConfig);
-          const persistedConfigs = await repository.save(configsToSave);
+      const savedConfigs =
+        await this.appConfigRepository.saveMany(configsToSave);
 
-          for (const savedConfig of persistedConfigs) {
-            const fileType = this.asFileConfigType(savedConfig.key);
-            const uploadedDocument = fileType
-              ? uploadedDocumentByType.get(fileType)
-              : undefined;
+      for (const savedConfig of savedConfigs) {
+        const fileType = this.asFileConfigType(savedConfig.key);
+        const uploadedDocument = fileType
+          ? uploadedDocumentByType.get(fileType)
+          : undefined;
 
-            await this.logsService.log(currentUser || null, {
-              module: LogModule.APP_CONFIG,
-              action: LogAction.UPDATE,
-              entityUuid: savedConfig.uuid,
-              entityName: savedConfig.key,
-              description: `Configuración actualizada: ${savedConfig.key}`,
-              oldData: oldDataByUuid.get(savedConfig.uuid),
-              newData: {
-                ...this.toLoggableConfig(savedConfig),
-                documentUuid: uploadedDocument?.uuid,
-                filePath: uploadedDocument?.file_path,
-              },
-            });
-          }
-
-          return persistedConfigs;
-        },
-      );
+        await this.logsService.log(currentUser || null, {
+          module: LogModule.APP_CONFIG,
+          action: LogAction.UPDATE,
+          entityUuid: savedConfig.uuid,
+          entityName: savedConfig.key,
+          description: `Configuración actualizada: ${savedConfig.key}`,
+          oldData: oldDataByUuid.get(savedConfig.uuid),
+          newData: {
+            ...this.toLoggableConfig(savedConfig),
+            documentUuid: uploadedDocument?.uuid,
+            filePath: uploadedDocument?.file_path,
+          },
+        });
+      }
 
       await this.deleteDocumentsSafely([...oldDocumentUuidsToDelete]);
 
@@ -332,13 +294,8 @@ export class AppConfigService {
   ): Promise<{ document: Document; absolutePath: string }> {
     const normalizedType = this.normalizeUploadType(type);
 
-    const config = await this.appConfigRepository.findOne({
-      where: {
-        key: normalizedType,
-        is_public: true,
-        is_active: true,
-      },
-    });
+    const config =
+      await this.appConfigRepository.findPublicActiveByKey(normalizedType);
 
     if (!config?.value?.trim()) {
       throw new NotFoundException(
@@ -346,7 +303,9 @@ export class AppConfigService {
       );
     }
 
-    const document = await this.documentsService.findByUuid(config.value.trim());
+    const document = await this.documentsService.findByUuid(
+      config.value.trim(),
+    );
     const exists = await this.documentsService.fileExists(document);
 
     if (!exists) {
@@ -363,7 +322,9 @@ export class AppConfigService {
     };
   }
 
-  private async parseConfigsPayload(payload: string): Promise<UpdateAppConfigDto[]> {
+  private async parseConfigsPayload(
+    payload: string,
+  ): Promise<UpdateAppConfigDto[]> {
     let parsedPayload: unknown;
 
     try {
@@ -446,9 +407,7 @@ export class AppConfigService {
     }
 
     if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
-      throw new BadRequestException(
-        `Tipo MIME no permitido para ${type}`,
-      );
+      throw new BadRequestException(`Tipo MIME no permitido para ${type}`);
     }
 
     const originalName = file.originalname.toLowerCase();
@@ -470,7 +429,9 @@ export class AppConfigService {
       case 'favicon':
         return DocumentType.FAVICON;
       default:
-        throw new BadRequestException(`Tipo de documento no soportado: ${type}`);
+        throw new BadRequestException(
+          `Tipo de documento no soportado: ${type}`,
+        );
     }
   }
 

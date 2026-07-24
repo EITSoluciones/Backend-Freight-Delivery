@@ -7,15 +7,25 @@ import { Platform } from 'src/platforms/entities/platform.entity';
 import { Role } from 'src/roles/entities/role.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { LogsModule } from 'src/logs/logs.module';
+import { UsersRepository } from './repositories/users.repository';
+import { UserRole } from './entities/user-role.entity';
+import { PlatformsRepository } from 'src/platforms/repositories/platforms.repository';
+import { RolesRepository } from 'src/roles/repositories/roles.repository';
+import { Permission } from 'src/roles/entities/permission.entity';
 
 @Module({
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [
+    UsersService,
+    UsersRepository,
+    PlatformsRepository,
+    RolesRepository,
+  ],
   imports: [
-    TypeOrmModule.forFeature([User, Platform, Role]),
+    TypeOrmModule.forFeature([User, UserRole, Platform, Role, Permission]),
     AuthModule,
     LogsModule,
   ],
-  exports: [UsersService],
+  exports: [UsersService, UsersRepository],
 })
-export class UsersModule { }
+export class UsersModule {}

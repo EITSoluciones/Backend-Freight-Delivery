@@ -14,7 +14,7 @@ export class CreateCompanyDto {
   @ApiProperty({ example: 'Mi Empresa S.A. de C.V.' })
   @IsString()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({ example: 'Mi Empresa' })
   @IsOptional()
@@ -26,7 +26,7 @@ export class CreateCompanyDto {
   @IsString()
   @MinLength(6)
   @MaxLength(50)
-  code_activation: string;
+  code_activation!: string;
 
   @ApiPropertyOptional()
   @IsOptional()

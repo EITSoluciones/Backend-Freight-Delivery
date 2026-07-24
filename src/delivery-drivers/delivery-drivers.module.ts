@@ -5,22 +5,27 @@ import { DeliveryDriver } from './entities/delivery-driver.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth/auth.module';
 import { DeliveryCatalog } from 'src/delivery-catalogs/entities/delivery-catalog.entity';
-import { DeliveryVehicle } from 'src/delivery-vehicles/entities/delivery-vehicle.entity';
 import { LogsModule } from 'src/logs/logs.module';
 import { UsersModule } from 'src/users/users.module';
+import { DeliveryDriversRepository } from './repositories/delivery-drivers.repository';
+import { DeliveryCatalogsRepository } from 'src/delivery-catalogs/repositories/delivery-catalogs.repository';
+import { UsersRepository } from 'src/users/repositories/users.repository';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      DeliveryDriver,
-      DeliveryVehicle,
-      DeliveryCatalog,
-    ]),
+    TypeOrmModule.forFeature([DeliveryDriver, DeliveryCatalog]),
     AuthModule,
     LogsModule,
-    UsersModule,
+    NotificationsModule,
   ],
   controllers: [DeliveryDriversController],
-  providers: [DeliveryDriversService],
+  providers: [
+    DeliveryDriversService,
+    DeliveryDriversRepository,
+    DeliveryCatalogsRepository,
+    UsersRepository,
+  ],
+  exports: [DeliveryDriversService, DeliveryDriversRepository],
 })
 export class DeliveryDriversModule {}

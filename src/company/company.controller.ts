@@ -36,7 +36,7 @@ import { Permissions } from '../auth/interfaces';
   version: '1',
 })
 export class CompanyController {
-  constructor(private readonly companyService: CompanyService) { }
+  constructor(private readonly companyService: CompanyService) {}
 
   // ============ COMPANY ============
   @Post()
@@ -133,6 +133,4 @@ export class CompanyController {
   deleteDocument(@Param('documentUuid') documentUuid: string) {
     return this.companyService.deleteDocument(documentUuid);
   }
-
-
 }

@@ -19,7 +19,9 @@ import { LogsModule } from './logs/logs.module';
 import { DocumentsModule } from './documents/documents.module';
 import { CompanyModule } from './company/company.module';
 import { AppConfigModule } from './app-config/app-config.module';
-import { SmsModule } from './sms/sms.module';
+import { TwilioModule } from './twilio/twilio.module';
+import { ShipmentsModule } from './shipments/shipments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -36,7 +38,7 @@ import { SmsModule } from './sms/sms.module';
       password: process.env.DB_PASSWORD,
       autoLoadEntities: process.env.DB_AUTOLOAD === 'true',
       synchronize: process.env.DB_SYNCHRONIZE === 'true',
-      logging: process.env.DB_LOGGING === 'true',
+      logging: ['error', 'warn'],
     }),
 
     CommonModule,
@@ -55,7 +57,9 @@ import { SmsModule } from './sms/sms.module';
     DocumentsModule,
     CompanyModule,
     AppConfigModule,
-    SmsModule
+    TwilioModule,
+    ShipmentsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

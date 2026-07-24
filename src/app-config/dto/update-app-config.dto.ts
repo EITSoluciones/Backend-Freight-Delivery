@@ -1,4 +1,3 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsOptional,
@@ -8,7 +7,6 @@ import {
 } from 'class-validator';
 
 export class UpdateAppConfigDto {
-
   @IsUUID()
   uuid!: string;
 

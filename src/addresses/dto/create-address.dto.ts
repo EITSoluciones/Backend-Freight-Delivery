@@ -13,54 +13,54 @@ export class CreateAddressDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  street: string;
+  street!: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(50)
-  external_number ? : string;
+  external_number?: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(50)
-  internal_number ? : string;
+  internal_number?: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  neighborhood: string;
+  neighborhood!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  municipality: string;
+  municipality!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  state: string;
+  state!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  country: string;
+  country!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(10)
-  postal_code: string;
+  postal_code!: string;
 
   @IsNumber()
   @IsOptional()
   @IsLatitude()
-  latitude ? : number;
+  latitude?: number;
 
   @IsNumber()
   @IsOptional()
   @IsLongitude()
-  longitude ? : number;
+  longitude?: number;
 
   @IsBoolean()
   @IsOptional()
-  is_primary ? : boolean;
+  is_primary?: boolean;
 }

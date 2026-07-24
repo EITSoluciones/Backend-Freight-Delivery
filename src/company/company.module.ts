@@ -8,6 +8,7 @@ import { CompanyFiscalAddress } from './entities/company-fiscal-address.entity';
 import { CompanyDocument } from './entities/company-document.entity';
 import { CompanyConfig } from './entities/company-config.entity';
 import { DocumentsModule } from '../documents/documents.module';
+import { CompanyRepository } from './repositories/company.repository';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { DocumentsModule } from '../documents/documents.module';
     DocumentsModule,
   ],
   controllers: [CompanyController],
-  providers: [CompanyService],
-  exports: [CompanyService],
+  providers: [CompanyService, CompanyRepository],
+  exports: [CompanyService, CompanyRepository],
 })
 export class CompanyModule {}

@@ -23,6 +23,12 @@ export class Address {
   })
   uuid!: string;
 
+  @Column({ type: 'int', nullable: true })
+  customer_id?: number | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  type?: string | null;
+
   @Column({
     type: 'varchar',
     length: 255,
@@ -122,12 +128,13 @@ export class Address {
   deleted_at?: Date | null;
 
   @ManyToOne(() => Customer, (customer) => customer.addresses, {
+    nullable: true,
     onDelete: 'CASCADE',
   })
   @JoinColumn({
     name: 'customer_id',
   })
-  customer!: Customer;
+  customer?: Customer | null;
 
   @BeforeInsert()
   generateUuid() {

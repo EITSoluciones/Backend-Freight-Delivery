@@ -12,18 +12,18 @@ export class CreateFiscalAddressDto {
   @ApiProperty({ example: 'Empresa ABC S.A. de C.V.' })
   @IsString()
   @MaxLength(255)
-  business_name: string;
+  business_name!: string;
 
   @ApiProperty({ example: 'XAXX010101000' })
   @IsString()
   @MinLength(12)
   @MaxLength(20)
-  rfc: string;
+  rfc!: string;
 
   @ApiProperty({ example: 'Av. Principal' })
   @IsString()
   @MaxLength(255)
-  street: string;
+  street!: string;
 
   @ApiPropertyOptional({ example: '123' })
   @IsOptional()
@@ -40,22 +40,22 @@ export class CreateFiscalAddressDto {
   @ApiProperty({ example: 'Centro' })
   @IsString()
   @MaxLength(255)
-  colony: string;
+  colony!: string;
 
   @ApiProperty({ example: 'Ciudad de Mexico' })
   @IsString()
   @MaxLength(255)
-  city: string;
+  city!: string;
 
   @ApiProperty({ example: 'CDMX' })
   @IsString()
   @MaxLength(255)
-  state: string;
+  state!: string;
 
   @ApiProperty({ example: '06600' })
   @IsString()
   @MaxLength(10)
-  zip_code: string;
+  zip_code!: string;
 
   @ApiPropertyOptional({ example: 'Mexico' })
   @IsOptional()

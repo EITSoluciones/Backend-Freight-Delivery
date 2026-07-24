@@ -5,10 +5,14 @@ import { ModulesController } from './modules.controller';
 import { ModulesService } from './modules.service';
 import { AuthModule } from 'src/auth/auth.module';
 import { ModuleCategory } from 'src/module-categories/entities/module-category.entity';
+import { ModulesRepository } from './repositories/modules.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ModuleEntity, ModuleCategory]), AuthModule],
+  imports: [
+    TypeOrmModule.forFeature([ModuleEntity, ModuleCategory]),
+    AuthModule,
+  ],
   controllers: [ModulesController],
-  providers: [ModulesService],
+  providers: [ModulesService, ModulesRepository],
 })
 export class ModulesModule {}

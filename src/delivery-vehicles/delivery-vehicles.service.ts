@@ -1,11 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   PaginatedResponse,
   SuccessResponseDto,
 } from 'src/common/dto/success-response.dto';
-import { DeliveryCatalog } from 'src/delivery-catalogs/entities/delivery-catalog.entity';
 import { DeliveryDriver } from 'src/delivery-drivers/entities/delivery-driver.entity';
 import { LogsService } from 'src/logs/logs.service';
 import { LogAction } from 'src/logs/enums/log-action.enum';
@@ -15,16 +16,16 @@ import { CreateDeliveryVehicleDto } from './dto/create-delivery-vehicle.dto';
 import { QueryDeliveryVehicleDto } from './dto/query-delivery-vehicle.dto';
 import { UpdateDeliveryVehicleDto } from './dto/update-delivery-vehicle.dto';
 import { DeliveryVehicle } from './entities/delivery-vehicle.entity';
+import { DeliveryDriversRepository } from 'src/delivery-drivers/repositories/delivery-drivers.repository';
+import { DeliveryVehiclesRepository } from './repositories/delivery-vehicles.repository';
+import { DeliveryCatalogsRepository } from 'src/delivery-catalogs/repositories/delivery-catalogs.repository';
 
 @Injectable()
 export class DeliveryVehiclesService {
   constructor(
-    @InjectRepository(DeliveryVehicle)
-    private readonly deliveryVehicleRepository: Repository<DeliveryVehicle>,
-    @InjectRepository(DeliveryDriver)
-    private readonly deliveryDriverRepository: Repository<DeliveryDriver>,
-    @InjectRepository(DeliveryCatalog)
-    private readonly deliveryCatalogRepository: Repository<DeliveryCatalog>,
+    private readonly deliveryVehiclesRepository: DeliveryVehiclesRepository,
+    private readonly deliveryDriversRepository: DeliveryDriversRepository,
+    private readonly deliveryCatalogsRepository: DeliveryCatalogsRepository,
     private readonly logsService: LogsService,
   ) {}
 
@@ -45,14 +46,22 @@ export class DeliveryVehiclesService {
       await this.clearPrimaryVehicles(driver.id);
     }
 
-    const vehicle = this.deliveryVehicleRepository.create({
+    const vehicle = this.deliveryVehiclesRepository.create({
       ...vehicleData,
-      delivery_driver_id: driver.id,
       is_primary: isPrimary,
       status: vehicleData.status ?? 'active',
     });
 
-    const savedVehicle = await this.deliveryVehicleRepository.save(vehicle);
+    const savedVehicle = await this.deliveryVehiclesRepository.save(vehicle);
+    await this.deliveryVehiclesRepository.saveAssignment(
+      this.deliveryVehiclesRepository.createAssignment({
+        delivery_driver_id: driver.id,
+        delivery_vehicle_id: savedVehicle.id,
+        start_date: new Date(),
+        is_active: true,
+      }),
+    );
+
     const createdVehicle = await this.getVehicleByUuid(savedVehicle.uuid);
 
     await this.logsService.log(currentUser || null, {
@@ -80,22 +89,8 @@ export class DeliveryVehiclesService {
   ): Promise<PaginatedResponse<DeliveryVehicle>> {
     const { limit = 10, page = 1, delivery_driver_uuid } = queryDto;
 
-    const query = this.deliveryVehicleRepository
-      .createQueryBuilder('vehicle')
-      .leftJoinAndSelect('vehicle.delivery_driver', 'driver')
-      .leftJoinAndSelect('driver.user', 'user')
-      .orderBy('vehicle.created_at', 'DESC');
-
-    if (delivery_driver_uuid) {
-      query.andWhere('driver.uuid = :delivery_driver_uuid', {
-        delivery_driver_uuid,
-      });
-    }
-
-    const [vehicles, total] = await query
-      .take(limit)
-      .skip((page - 1) * limit)
-      .getManyAndCount();
+    const [vehicles, total] =
+      await this.deliveryVehiclesRepository.findAll(queryDto);
 
     return PaginatedResponse.create(
       vehicles,
@@ -123,36 +118,51 @@ export class DeliveryVehiclesService {
   ): Promise<SuccessResponseDto<DeliveryVehicle>> {
     const vehicle = await this.getVehicleByUuid(uuid);
     const oldData = { ...vehicle };
-    const oldDriverId = vehicle.delivery_driver_id;
+    const oldDriverId = this.getActiveDriverId(vehicle);
     await this.validateCatalogSelections(updateDeliveryVehicleDto);
 
-    let targetDriverId = vehicle.delivery_driver_id;
+    let targetDriverId = oldDriverId;
+    const { delivery_driver_uuid, ...vehicleDataToUpdate } =
+      updateDeliveryVehicleDto;
 
-    if (updateDeliveryVehicleDto.delivery_driver_uuid) {
-      const nextDriver = await this.getDriverByUuid(
-        updateDeliveryVehicleDto.delivery_driver_uuid,
-      );
+    if (delivery_driver_uuid) {
+      const nextDriver = await this.getDriverByUuid(delivery_driver_uuid);
       targetDriverId = nextDriver.id;
+
+      if (oldDriverId !== targetDriverId) {
+        await this.deliveryVehiclesRepository.closeActiveAssignmentsByVehicleId(
+          vehicle.id,
+        );
+        await this.deliveryVehiclesRepository.saveAssignment(
+          this.deliveryVehiclesRepository.createAssignment({
+            delivery_driver_id: nextDriver.id,
+            delivery_vehicle_id: vehicle.id,
+            start_date: new Date(),
+            is_active: true,
+          }),
+        );
+      }
     }
 
-    const isPrimary = await this.resolvePrimaryFlag(
-      targetDriverId,
-      updateDeliveryVehicleDto.is_primary,
-      vehicle,
-    );
+    const isPrimary = targetDriverId
+      ? await this.resolvePrimaryFlag(
+          targetDriverId,
+          updateDeliveryVehicleDto.is_primary,
+          vehicle,
+        )
+      : false;
 
-    if (isPrimary) {
+    if (isPrimary && targetDriverId) {
       await this.clearPrimaryVehicles(targetDriverId, vehicle.id);
     }
 
-    Object.assign(vehicle, updateDeliveryVehicleDto, {
-      delivery_driver_id: targetDriverId,
+    Object.assign(vehicle, vehicleDataToUpdate, {
       is_primary: isPrimary,
     });
 
-    await this.deliveryVehicleRepository.save(vehicle);
+    await this.deliveryVehiclesRepository.save(vehicle);
 
-    if (oldDriverId !== targetDriverId || oldData.is_primary) {
+    if (oldDriverId && (oldDriverId !== targetDriverId || oldData.is_primary)) {
       await this.assignPrimaryVehicleIfNeeded(oldDriverId);
     }
 
@@ -180,9 +190,16 @@ export class DeliveryVehiclesService {
     currentUser?: User,
   ): Promise<SuccessResponseDto<DeliveryVehicle>> {
     const vehicle = await this.getVehicleByUuid(uuid);
+    const activeDriverId = this.getActiveDriverId(vehicle);
+    const activeDriverUuid = this.getActiveDriverUuid(vehicle);
 
-    await this.deliveryVehicleRepository.softDelete({ uuid });
-    await this.assignPrimaryVehicleIfNeeded(vehicle.delivery_driver_id);
+    await this.deliveryVehiclesRepository.closeActiveAssignmentsByVehicleId(
+      vehicle.id,
+    );
+    await this.deliveryVehiclesRepository.softDeleteByUuid(uuid);
+    if (activeDriverId) {
+      await this.assignPrimaryVehicleIfNeeded(activeDriverId);
+    }
 
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_VEHICLES,
@@ -192,7 +209,7 @@ export class DeliveryVehiclesService {
       description: `Vehiculo de reparto eliminado: ${vehicle.plate_number}`,
       oldData: {
         plate_number: vehicle.plate_number,
-        delivery_driver_uuid: vehicle.delivery_driver.uuid,
+        delivery_driver_uuid: activeDriverUuid,
       },
     });
 
@@ -204,10 +221,7 @@ export class DeliveryVehiclesService {
   }
 
   private async getVehicleByUuid(uuid: string): Promise<DeliveryVehicle> {
-    const vehicle = await this.deliveryVehicleRepository.findOne({
-      where: { uuid },
-      relations: ['delivery_driver', 'delivery_driver.user'],
-    });
+    const vehicle = await this.deliveryVehiclesRepository.findByUuid(uuid);
 
     if (!vehicle) {
       throw new NotFoundException(
@@ -219,9 +233,7 @@ export class DeliveryVehiclesService {
   }
 
   private async getDriverByUuid(uuid: string): Promise<DeliveryDriver> {
-    const driver = await this.deliveryDriverRepository.findOne({
-      where: { uuid },
-    });
+    const driver = await this.deliveryDriversRepository.findByUuid(uuid);
 
     if (!driver) {
       throw new NotFoundException(`Repartidor con uuid ${uuid} no encontrado!`);
@@ -230,25 +242,28 @@ export class DeliveryVehiclesService {
     return driver;
   }
 
+  private getActiveDriverId(vehicle: DeliveryVehicle): number | undefined {
+    return vehicle.driver_assignments?.find(
+      (assignment) => assignment.is_active,
+    )?.delivery_driver_id;
+  }
+
+  private getActiveDriverUuid(vehicle: DeliveryVehicle): string | undefined {
+    return vehicle.driver_assignments?.find(
+      (assignment) => assignment.is_active,
+    )?.delivery_driver?.uuid;
+  }
+
   private async resolvePrimaryFlag(
     deliveryDriverId: number,
     requestedPrimary?: boolean,
     currentVehicle?: DeliveryVehicle,
   ): Promise<boolean> {
-    const countQuery = this.deliveryVehicleRepository
-      .createQueryBuilder('vehicle')
-      .where('vehicle.delivery_driver_id = :deliveryDriverId', {
+    const otherVehiclesCount =
+      await this.deliveryVehiclesRepository.countByDriverId(
         deliveryDriverId,
-      })
-      .andWhere('vehicle.deleted_at IS NULL');
-
-    if (currentVehicle) {
-      countQuery.andWhere('vehicle.id != :vehicleId', {
-        vehicleId: currentVehicle.id,
-      });
-    }
-
-    const otherVehiclesCount = await countQuery.getCount();
+        currentVehicle?.id,
+      );
 
     if (requestedPrimary === true) {
       return true;
@@ -258,7 +273,10 @@ export class DeliveryVehiclesService {
       return otherVehiclesCount === 0;
     }
 
-    if (currentVehicle && currentVehicle.delivery_driver_id === deliveryDriverId) {
+    if (
+      currentVehicle &&
+      this.getActiveDriverId(currentVehicle) === deliveryDriverId
+    ) {
       return currentVehicle.is_primary;
     }
 
@@ -269,45 +287,35 @@ export class DeliveryVehiclesService {
     deliveryDriverId: number,
     excludeVehicleId?: number,
   ): Promise<void> {
-    const query = this.deliveryVehicleRepository
-      .createQueryBuilder()
-      .update(DeliveryVehicle)
-      .set({ is_primary: false })
-      .where('delivery_driver_id = :deliveryDriverId', { deliveryDriverId })
-      .andWhere('deleted_at IS NULL');
-
-    if (excludeVehicleId) {
-      query.andWhere('id != :excludeVehicleId', { excludeVehicleId });
-    }
-
-    await query.execute();
+    await this.deliveryVehiclesRepository.clearPrimaryByDriverId(
+      deliveryDriverId,
+      excludeVehicleId,
+    );
   }
 
   private async assignPrimaryVehicleIfNeeded(
     deliveryDriverId: number,
   ): Promise<void> {
-    const currentPrimary = await this.deliveryVehicleRepository.findOne({
-      where: {
-        delivery_driver_id: deliveryDriverId,
-        is_primary: true,
-      },
-    });
+    const currentPrimary =
+      await this.deliveryVehiclesRepository.findPrimaryByDriverId(
+        deliveryDriverId,
+      );
 
     if (currentPrimary) {
       return;
     }
 
-    const nextPrimary = await this.deliveryVehicleRepository.findOne({
-      where: { delivery_driver_id: deliveryDriverId },
-      order: { created_at: 'ASC' },
-    });
+    const nextPrimary =
+      await this.deliveryVehiclesRepository.findFirstByDriverId(
+        deliveryDriverId,
+      );
 
     if (!nextPrimary) {
       return;
     }
 
     nextPrimary.is_primary = true;
-    await this.deliveryVehicleRepository.save(nextPrimary);
+    await this.deliveryVehiclesRepository.save(nextPrimary);
   }
 
   private async validateCatalogSelections(
@@ -325,13 +333,10 @@ export class DeliveryVehiclesService {
       return;
     }
 
-    const exists = await this.deliveryCatalogRepository.findOne({
-      where: {
-        category,
-        code,
-        is_active: true,
-      },
-    });
+    const exists = await this.deliveryCatalogsRepository.existsActiveCode(
+      category,
+      code,
+    );
 
     if (!exists) {
       throw new BadRequestException(

@@ -4,12 +4,11 @@ import {
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Repository } from 'typeorm';
 import { Document } from './entities/document.entity';
 import { DocumentType } from './enums/document-type.enum';
+import { DocumentsRepository } from './repositories/documents.repository';
 
 export interface UploadFileOptions {
   file: Express.Multer.File;
@@ -28,10 +27,7 @@ export interface UploadResult {
 export class DocumentsService implements OnModuleInit {
   private readonly uploadDir = process.env.UPLOAD_DIR || './uploads';
 
-  constructor(
-    @InjectRepository(Document)
-    private readonly documentRepository: Repository<Document>,
-  ) {}
+  constructor(private readonly documentsRepository: DocumentsRepository) {}
 
   async onModuleInit(): Promise<void> {
     await this.ensureUploadDirectory(this.uploadDir);
@@ -95,12 +91,14 @@ export class DocumentsService implements OnModuleInit {
     await this.ensureUploadDirectory(targetDir);
 
     const absoluteFilePath = path.join(targetDir, storedFilename);
-    const relativePath = path.join(safeFolder, storedFilename).replace(/\\/g, '/');
+    const relativePath = path
+      .join(safeFolder, storedFilename)
+      .replace(/\\/g, '/');
 
     await fs.promises.writeFile(absoluteFilePath, file.buffer);
 
     try {
-      const document = this.documentRepository.create({
+      const document = this.documentsRepository.create({
         original_name: file.originalname,
         file_path: relativePath,
         mime_type: file.mimetype,
@@ -112,7 +110,7 @@ export class DocumentsService implements OnModuleInit {
         is_active: true,
       });
 
-      const savedDocument = await this.documentRepository.save(document);
+      const savedDocument = await this.documentsRepository.save(document);
 
       return {
         document: savedDocument,
@@ -126,9 +124,7 @@ export class DocumentsService implements OnModuleInit {
   }
 
   async findByUuid(uuid: string): Promise<Document> {
-    const document = await this.documentRepository.findOne({
-      where: { uuid, is_active: true },
-    });
+    const document = await this.documentsRepository.findActiveByUuid(uuid);
 
     if (!document) {
       throw new NotFoundException(`Documento con uuid ${uuid} no encontrado`);
@@ -163,7 +159,7 @@ export class DocumentsService implements OnModuleInit {
     }
 
     document.is_active = false;
-    await this.documentRepository.save(document);
-    await this.documentRepository.softRemove(document);
+    await this.documentsRepository.save(document);
+    await this.documentsRepository.softRemove(document);
   }
 }

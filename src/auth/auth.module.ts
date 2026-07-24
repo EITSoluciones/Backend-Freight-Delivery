@@ -7,16 +7,22 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { Platform } from 'src/platforms/entities/platform.entity';
-import { Role } from 'src/roles/entities/role.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { UsersRepository } from 'src/users/repositories/users.repository';
+import { UserRole } from 'src/users/entities/user-role.entity';
+import { RefreshTokensRepository } from './repositories/refresh-tokens.repository';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    UsersRepository,
+    RefreshTokensRepository,
+  ],
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, Platform, Role,RefreshToken]), 
+    TypeOrmModule.forFeature([User, UserRole, RefreshToken]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -25,12 +31,12 @@ import { RefreshToken } from './entities/refresh-token.entity';
         return {
           secret: 's3cr3tjwt2025',
           signOptions: {
-            expiresIn:process.env.JWT_EXPIRATION,
-          }
-        }
-      }
-    })
+            expiresIn: process.env.JWT_EXPIRATION,
+          },
+        };
+      },
+    }),
   ],
-  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule]
+  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule],
 })
-export class AuthModule { }
+export class AuthModule {}
