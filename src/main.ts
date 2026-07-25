@@ -11,11 +11,11 @@ async function bootstrap() {
 
   // Habilita CORS para cualquier origen
   if (process.env.CORS_ENABLED == 'true') {
-    const origins = process.env.CORS_ORIGINS?.split(',').map((origin) =>
-      origin.trim(),
-    );
+    const origins = (process.env.CORS_ORIGINS ?? process.env.CORS_ORIGIN)
+      ?.split(',')
+      .map((origin) => origin.trim());
     app.enableCors({
-      origin: origins,
+      origin: origins?.includes('*') ? true : origins,
       credentials: false,
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       allowedHeaders: 'Content-Type,Authorization',
