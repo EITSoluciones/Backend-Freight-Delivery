@@ -26,6 +26,7 @@ import { DeliveryCatalogsRepository } from 'src/delivery-catalogs/repositories/d
 import { UsersRepository } from 'src/users/repositories/users.repository';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { SendDeliveryDriverInvitationDto } from './dto/send-delivery-driver-invitation.dto';
+import { LicenseValidationService } from 'src/auth/services/license-validation.service';
 
 const DEFAULT_DELIVERY_ROLE_CODE = 'DELIVERY';
 const DEFAULT_DELIVERY_INVITATION_NOTIFICATION_CODE = 'DELIVERY_DRIVER_INVITATION';
@@ -41,6 +42,8 @@ export class DeliveryDriversService {
     private readonly usersRepository: UsersRepository,
 
     private readonly notificationsService: NotificationsService,
+
+    private readonly licenseValidationService: LicenseValidationService,
   ) {}
 
   async create(
@@ -145,6 +148,7 @@ export class DeliveryDriversService {
   }
 
   async sendInvitation(sendInvitationDto: SendDeliveryDriverInvitationDto) {
+    const license = await this.licenseValidationService.validate();
     const user = await this.usersRepository.findByUuid(
       sendInvitationDto.user_uuid,
     );
@@ -163,6 +167,7 @@ export class DeliveryDriversService {
 
     const parameters = {
       param0: [user.name, user.last_name].filter(Boolean).join(' ') || user.username,
+      param1: license.data.activation_code,
     };
 
     const result = await this.notificationsService.sendNotification(

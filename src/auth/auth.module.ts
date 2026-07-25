@@ -11,6 +11,9 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { UsersRepository } from 'src/users/repositories/users.repository';
 import { UserRole } from 'src/users/entities/user-role.entity';
 import { RefreshTokensRepository } from './repositories/refresh-tokens.repository';
+import { HttpModule } from '@nestjs/axios';
+import { LicenseValidationService } from './services/license-validation.service';
+import { AppConfigModule } from 'src/app-config/app-config.module';
 
 @Module({
   controllers: [AuthController],
@@ -19,9 +22,12 @@ import { RefreshTokensRepository } from './repositories/refresh-tokens.repositor
     JwtStrategy,
     UsersRepository,
     RefreshTokensRepository,
+    LicenseValidationService,
   ],
   imports: [
     ConfigModule,
+    HttpModule,
+    AppConfigModule,
     TypeOrmModule.forFeature([User, UserRole, RefreshToken]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
@@ -37,6 +43,12 @@ import { RefreshTokensRepository } from './repositories/refresh-tokens.repositor
       },
     }),
   ],
-  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule],
+  exports: [
+    TypeOrmModule,
+    JwtStrategy,
+    PassportModule,
+    JwtModule,
+    LicenseValidationService,
+  ],
 })
 export class AuthModule {}
