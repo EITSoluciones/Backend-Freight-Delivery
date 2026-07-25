@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { LoginUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -7,6 +11,7 @@ import { SuccessResponseDto } from 'src/common/dto/success-response.dto';
 import { UsersRepository } from 'src/users/repositories/users.repository';
 import { TokenExpiredError } from 'jsonwebtoken';
 import { RefreshTokensRepository } from './repositories/refresh-tokens.repository';
+import { LicenseValidationService } from './services/license-validation.service';
 
 @Injectable()
 export class AuthService {
@@ -14,9 +19,12 @@ export class AuthService {
     private readonly usersRepository: UsersRepository,
     private readonly refreshTokensRepository: RefreshTokensRepository,
     private readonly jwtService: JwtService,
+    private readonly licenseValidationService: LicenseValidationService,
   ) {}
 
   async login(loginUserDto: LoginUserDto) {
+    await this.licenseValidationService.validate();
+
     const { password, username, platform } = loginUserDto;
 
     // Busca usuario
@@ -86,6 +94,14 @@ export class AuthService {
         throw new UnauthorizedException(
           'La sesión ha expirado o es inválida. Por favor, inicie sesión de nuevo.',
         );
+      try {
+        await this.licenseValidationService.validate();
+      } catch (error) {
+        if (error instanceof ForbiddenException) {
+          await this.refreshTokensRepository.deleteById(currentTokenEntity.id);
+        }
+        throw error;
+      }
       const accessToken = this.getAccessToken({ uuid: payload.uuid });
       const newRefreshToken = this.getRefreshToken({ uuid: payload.uuid });
       await this.refreshTokensRepository.deleteById(currentTokenEntity.id);
