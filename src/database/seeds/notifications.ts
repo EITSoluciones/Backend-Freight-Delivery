@@ -11,9 +11,9 @@ export async function seedNotifications(dataSource: DataSource) {
       name: 'Invitación a repartidor',
       channel: NotificationChannel.SMS,
       content:
-        'Hola {param0}, te invitamos a instalar la app Freight Delivery: https://freight-delivery.eitsoluciones.com.mx',
+        'Hola {param0}, te invitamos a instalar la app Freight Delivery: https://freight-delivery.eitsoluciones.com.mx. Código de activación: {param1}',
       description: 'Invitación para que un repartidor instale la aplicación',
-      is_global: true,
+      is_global: false,
       is_active: true,
     },
   ];
