@@ -6,7 +6,6 @@ import {
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { QueryCustomerDto } from './dto/query-customer.dto';
 import { Address } from 'src/addresses/entities/address.entity';
 import {
   SuccessResponseDto,
@@ -19,6 +18,7 @@ import { User } from 'src/users/entities/user.entity';
 import { CustomersRepository } from './repositories/customers.repository';
 import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
 import { AddressesRepository } from 'src/addresses/repositories/addresses.repository';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class CustomersService {
@@ -72,11 +72,11 @@ export class CustomersService {
   }
 
   async findAll(
-    queryCustomerDto: QueryCustomerDto,
+   paginationDto: PaginationDto,
   ): Promise<PaginatedResponse<Customer>> {
-    const { limit = 10, page = 1 } = queryCustomerDto;
+    const { limit = 10, page = 1 } = paginationDto;
     const [customers, total] =
-      await this.customersRepository.findAll(queryCustomerDto);
+      await this.customersRepository.findAll(paginationDto);
 
     return PaginatedResponse.create(
       customers,
@@ -86,6 +86,16 @@ export class CustomersService {
       'Customers retrieved successfully!',
     );
   }
+
+  async getCustomerCatalog(): Promise<SuccessResponseDto<Customer[]>> {
+      const customers = await this.customersRepository.findActive();
+      return new SuccessResponseDto(
+        true,
+        'Clientes obtenidos exitosamente!',
+        customers  ,
+      );
+    }
+
 
   async findOne(uuid: string): Promise<SuccessResponseDto<Customer>> {
     const customer = await this.getCustomerByUuid(uuid);
