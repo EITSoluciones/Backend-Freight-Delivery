@@ -113,6 +113,7 @@ export class CustomersService {
     const { addresses, ...customerData } = updateCustomerDto;
 
     this.customersRepository.merge(customer, customerData);
+    await this.customersRepository.save(customer);
 
     if (addresses !== undefined) {
       this.ensureSinglePrimaryAddress(addresses);
@@ -122,14 +123,13 @@ export class CustomersService {
       );
 
       const processedAddresses: Address[] = [];
-
+      console.log('addresses', addresses);
       for (const addressDto of addresses) {
         if (addressDto.uuid) {
           const existingAddress = existingAddressesMap.get(addressDto.uuid);
 
           if (existingAddress) {
             this.addressesRepository.merge(existingAddress, addressDto);
-            existingAddress.customer = customer;
             processedAddresses.push(existingAddress);
             existingAddressesMap.delete(addressDto.uuid);
           } else {
@@ -138,9 +138,10 @@ export class CustomersService {
             );
           }
         } else {
+          console.log('Creating new address for customer', customer);
           const newAddress = this.addressesRepository.create({
             ...addressDto,
-            customer,
+            customer: { id: customer.id },
           });
 
           processedAddresses.push(newAddress);
@@ -151,8 +152,6 @@ export class CustomersService {
     }
 
     try {
-      await this.customersRepository.save(customer);
-
       await this.logsService.log(currentUser || null, {
         module: LogModule.CUSTOMERS,
         action: LogAction.UPDATE,
