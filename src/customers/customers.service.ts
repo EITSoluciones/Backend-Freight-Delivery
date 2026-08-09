@@ -123,7 +123,6 @@ export class CustomersService {
       );
 
       const processedAddresses: Address[] = [];
-      console.log('addresses', addresses);
       for (const addressDto of addresses) {
         if (addressDto.uuid) {
           const existingAddress = existingAddressesMap.get(addressDto.uuid);
@@ -138,7 +137,6 @@ export class CustomersService {
             );
           }
         } else {
-          console.log('Creating new address for customer', customer);
           const newAddress = this.addressesRepository.create({
             ...addressDto,
             customer: { id: customer.id },
@@ -150,7 +148,6 @@ export class CustomersService {
 
       await this.addressesRepository.saveMany(processedAddresses);
     }
-
     try {
       await this.logsService.log(currentUser || null, {
         module: LogModule.CUSTOMERS,
