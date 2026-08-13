@@ -13,13 +13,13 @@ import {
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { QueryCustomerDto } from './dto/query-customer.dto';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Auth, GetUser } from 'src/auth/decorators';
 import { Permissions } from 'src/auth/interfaces';
 import { User } from 'src/users/entities/user.entity';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @ApiTags('Customers')
 @Controller({
@@ -43,8 +43,14 @@ export class CustomersController {
 
   @Get()
   @Auth(Permissions.CustomersView)
-  findAll(@Query() queryCustomerDto: QueryCustomerDto) {
-    return this.customersService.findAll(queryCustomerDto);
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.customersService.findAll(paginationDto);
+  }
+
+  
+  @Get('catalog')
+  getCustomerCatalog() {
+    return this.customersService.getCustomerCatalog();
   }
 
   @Get(':uuid')

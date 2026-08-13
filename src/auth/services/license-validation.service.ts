@@ -25,20 +25,28 @@ export class LicenseValidationService {
   ) {}
 
   async validate(): Promise<LicenseValidationResponse> {
-    const licenseServerUrl = process.env.URL_SERVER_LICENCES;
-
-    if (!licenseServerUrl) {
-      throw new ServiceUnavailableException(
-        'La configuración de validación de licencia está incompleta.',
-      );
-    }
-
     const activationCode =
       await this.appConfigRepository.findActiveByKey('activation_code');
 
     if (!activationCode?.value) {
       throw new ServiceUnavailableException(
         'No se encontró un código de activación activo.',
+      );
+    }
+
+    // El entorno local no depende del servidor externo de licencias.
+    if (process.env.NODE_ENV === 'development') {
+      return {
+        message: 'Validación de licencia omitida en desarrollo.',
+        data: { activation_code: activationCode.value },
+      };
+    }
+
+    const licenseServerUrl = process.env.URL_SERVER_LICENCES;
+
+    if (!licenseServerUrl) {
+      throw new ServiceUnavailableException(
+        'La configuración de validación de licencia está incompleta.',
       );
     }
 

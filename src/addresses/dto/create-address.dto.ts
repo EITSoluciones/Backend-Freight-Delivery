@@ -33,7 +33,12 @@ export class CreateAddressDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  municipality!: string;
+  district!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  city!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -47,8 +52,12 @@ export class CreateAddressDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(10)
+  @MaxLength(12)
   postal_code!: string;
+
+  @IsString()
+  @IsOptional()
+  reference!: string;
 
   @IsNumber()
   @IsOptional()
