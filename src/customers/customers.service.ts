@@ -147,6 +147,12 @@ export class CustomersService {
       }
 
       await this.addressesRepository.saveMany(processedAddresses);
+
+      await Promise.all(
+        [...existingAddressesMap.keys()].map((addressUuid) =>
+          this.addressesRepository.softDeleteByUuid(addressUuid),
+        ),
+      );
     }
     try {
       await this.logsService.log(currentUser || null, {
