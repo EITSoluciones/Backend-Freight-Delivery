@@ -74,6 +74,18 @@ export enum Permissions {
   AppConfigView = 'appconfig:view',
   AppConfigUpdate = 'appconfig:update',
 
+  //Centros
+  CentersView = 'centers:view',
+  CentersCreate = 'centers:create',
+  CentersUpdate = 'centers:update',
+  CentersDelete = 'centers:delete',
+
+  //Pedidos
+  OrdersView = 'orders:view',
+  OrdersCreate = 'orders:create',
+  OrdersUpdate = 'orders:update',
+  OrdersDelete = 'orders:delete',
+
   //Test
   Test = 'test:view',
 }

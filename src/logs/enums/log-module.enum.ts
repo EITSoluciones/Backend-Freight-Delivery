@@ -11,4 +11,6 @@ export enum LogModule {
   MODULES = 'modules',
   MODULE_CATEGORIES = 'module_categories',
   APP_CONFIG = 'app_config',
+  CENTERS = 'centers',
+  ORDERS = 'orders',
 }
