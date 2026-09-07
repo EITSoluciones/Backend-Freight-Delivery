@@ -56,12 +56,10 @@ export class OrdersService {
       const savedOrder = await this.ordersRepository.save(order);
       const createdOrder = await this.getOrderByUuid(savedOrder.uuid);
 
-      this.logsService.log(currentUser || null, {
+      await this.logsService.log(currentUser || null, {
         module: LogModule.ORDERS,
         action: LogAction.CREATE,
-        entityUuid: createdOrder.uuid,
-        entityName: createdOrder.order_number,
-        description: `Pedido creado: ${createdOrder.order_number}`,
+        description: `Pedido creado: ${createdOrder.order_number}. UUID: ${createdOrder.uuid}`,
         newData: createOrderDto,
       });
 
@@ -128,12 +126,10 @@ export class OrdersService {
       await this.ordersRepository.save(order);
       const updatedOrder = await this.getOrderByUuid(uuid);
 
-      this.logsService.log(currentUser || null, {
+      await this.logsService.log(currentUser || null, {
         module: LogModule.ORDERS,
         action: LogAction.UPDATE,
-        entityUuid: updatedOrder.uuid,
-        entityName: updatedOrder.order_number,
-        description: `Pedido actualizado: ${updatedOrder.order_number}`,
+        description: `Pedido actualizado: ${updatedOrder.order_number}. UUID: ${updatedOrder.uuid}`,
         oldData,
         newData: updateOrderDto,
       });
@@ -155,12 +151,10 @@ export class OrdersService {
     const order = await this.getOrderByUuid(uuid);
     await this.ordersRepository.softDeleteByUuid(uuid);
 
-    this.logsService.log(currentUser || null, {
+    await this.logsService.log(currentUser || null, {
       module: LogModule.ORDERS,
       action: LogAction.DELETE,
-      entityUuid: order.uuid,
-      entityName: order.order_number,
-      description: `Pedido eliminado: ${order.order_number}`,
+      description: `Pedido eliminado: ${order.order_number}. UUID: ${order.uuid}`,
       oldData: { order_number: order.order_number },
     });
 

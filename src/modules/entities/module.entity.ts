@@ -17,12 +17,14 @@ import { Exclude } from 'class-transformer';
 
 @Entity('modules')
 export class Module {
-  @Exclude()
   @PrimaryGeneratedColumn('increment')
   id!: number;
 
   @Column({ type: 'uuid', unique: true })
   uuid!: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true, unique: true })
+  code?: string | null;
 
   @Exclude()
   @Column({ type: 'int', name: 'module_category_id' })

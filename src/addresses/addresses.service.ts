@@ -47,9 +47,7 @@ export class AddressesService {
       await this.logsService.log(currentUser || null, {
         module: LogModule.ADDRESSES,
         action: LogAction.CREATE,
-        entityUuid: savedAddress.uuid,
-        entityName: `Address for ${customer.name}`,
-        description: `Dirección agregada al cliente: ${customer.name}`,
+        description: `Dirección agregada al cliente: ${customer.name}. UUID: ${savedAddress.uuid}`,
         newData: { street: savedAddress.street, customerUuid },
       });
 
@@ -87,9 +85,7 @@ export class AddressesService {
       await this.logsService.log(currentUser || null, {
         module: LogModule.ADDRESSES,
         action: LogAction.UPDATE,
-        entityUuid: updatedAddress.uuid,
-        entityName: `Address ${updatedAddress.street}`,
-        description: `Dirección actualizada`,
+        description: `Dirección actualizada. UUID: ${updatedAddress.uuid}`,
         oldData,
         newData: updateAddressDto,
       });
@@ -114,9 +110,7 @@ export class AddressesService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.ADDRESSES,
       action: LogAction.DELETE,
-      entityUuid: address.uuid,
-      entityName: `Address ${address.street}`,
-      description: `Dirección eliminada`,
+      description: `Dirección eliminada. UUID: ${address.uuid}`,
       oldData: { street: address.street },
     });
 

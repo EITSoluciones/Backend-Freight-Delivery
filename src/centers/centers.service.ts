@@ -30,12 +30,10 @@ export class CentersService {
       const center = this.centersRepository.create(createCenterDto);
       const savedCenter = await this.centersRepository.save(center);
 
-      this.logsService.log(currentUser || null, {
+      await this.logsService.log(currentUser || null, {
         module: LogModule.CENTERS,
         action: LogAction.CREATE,
-        entityUuid: savedCenter.uuid,
-        entityName: savedCenter.name,
-        description: `Centro creado: ${savedCenter.name}`,
+        description: `Centro creado: ${savedCenter.name}. UUID: ${savedCenter.uuid}`,
         newData: createCenterDto,
       });
 
@@ -86,12 +84,10 @@ export class CentersService {
     try {
       const updatedCenter = await this.centersRepository.save(center);
 
-      this.logsService.log(currentUser || null, {
+      await this.logsService.log(currentUser || null, {
         module: LogModule.CENTERS,
         action: LogAction.UPDATE,
-        entityUuid: updatedCenter.uuid,
-        entityName: updatedCenter.name,
-        description: `Centro actualizado: ${updatedCenter.name}`,
+        description: `Centro actualizado: ${updatedCenter.name}. UUID: ${updatedCenter.uuid}`,
         oldData,
         newData: updateCenterDto,
       });
@@ -113,12 +109,10 @@ export class CentersService {
     const center = await this.getCenterByUuid(uuid);
     await this.centersRepository.softDeleteByUuid(uuid);
 
-    this.logsService.log(currentUser || null, {
+    await this.logsService.log(currentUser || null, {
       module: LogModule.CENTERS,
       action: LogAction.DELETE,
-      entityUuid: center.uuid,
-      entityName: center.name,
-      description: `Centro eliminado: ${center.name}`,
+      description: `Centro eliminado: ${center.name}. UUID: ${center.uuid}`,
       oldData: { code: center.code, name: center.name },
     });
 

@@ -51,14 +51,13 @@ export class CustomersService {
 
     try {
       const savedCustomer = await this.customersRepository.save(customer);
+      const customerToLog = await this.getCustomerByUuid(savedCustomer.uuid);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.CUSTOMERS,
         action: LogAction.CREATE,
-        entityUuid: savedCustomer.uuid,
-        entityName: savedCustomer.name,
-        description: `Cliente creado: ${savedCustomer.name}`,
-        newData: { name: savedCustomer.name, email: savedCustomer.email },
+        description: `Cliente creado: ${customerToLog.name}. UUID: ${savedCustomer.uuid}`,
+        newData: this.getCustomerAuditData(customerToLog),
       });
 
       return new SuccessResponseDto(
@@ -109,7 +108,7 @@ export class CustomersService {
   ): Promise<SuccessResponseDto<Customer>> {
     const customer = await this.getCustomerByUuidWithAddresses(uuid);
 
-    const oldData = { ...customer };
+    const oldData = this.getCustomerAuditData(customer);
     const { addresses, ...customerData } = updateCustomerDto;
 
     this.customersRepository.merge(customer, customerData);
@@ -155,20 +154,20 @@ export class CustomersService {
       );
     }
     try {
+      const updatedCustomer = await this.getCustomerByUuid(uuid);
+
       await this.logsService.log(currentUser || null, {
         module: LogModule.CUSTOMERS,
         action: LogAction.UPDATE,
-        entityUuid: customer.uuid,
-        entityName: customer.name,
-        description: `Cliente actualizado: ${customer.name}`,
+        description: `Cliente actualizado: ${updatedCustomer.name}. UUID: ${updatedCustomer.uuid}`,
         oldData,
-        newData: updateCustomerDto,
+        newData: this.getCustomerAuditData(updatedCustomer),
       });
 
       return new SuccessResponseDto(
         true,
         'Customer updated successfully!',
-        await this.getCustomerByUuid(uuid),
+        updatedCustomer,
       );
     } catch (error) {
       this.dbErrorHandler.handleDBErrors(error);
@@ -185,10 +184,8 @@ export class CustomersService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.CUSTOMERS,
       action: LogAction.DELETE,
-      entityUuid: customer.uuid,
-      entityName: customer.name,
-      description: `Cliente eliminado: ${customer.name}`,
-      oldData: { name: customer.name, email: customer.email },
+      description: `Cliente eliminado: ${customer.name}. UUID: ${customer.uuid}`,
+      oldData: this.getCustomerAuditData(customer),
     });
 
     return new SuccessResponseDto(
@@ -234,5 +231,32 @@ export class CustomersService {
     if (primaryAddresses === 0 && addresses.length > 0) {
       addresses[0].is_primary = true;
     }
+  }
+
+  private getCustomerAuditData(customer: Customer) {
+    return {
+      code: customer.code,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone ?? null,
+      is_active: customer.is_active,
+      addresses: (customer.addresses ?? []).map((address) => ({
+        type: address.type ?? null,
+        street: address.street,
+        external_number: address.external_number ?? null,
+        internal_number: address.internal_number ?? null,
+        neighborhood: address.neighborhood,
+        district: address.district,
+        city: address.city,
+        state: address.state,
+        country: address.country,
+        postal_code: address.postal_code,
+        reference: address.reference,
+        longitude: address.longitude ?? null,
+        latitude: address.latitude ?? null,
+        is_primary: address.is_primary,
+        is_active: address.is_active,
+      })),
+    };
   }
 }

@@ -4,7 +4,7 @@ export enum LogModule {
   CUSTOMERS = 'customers',
   ADDRESSES = 'addresses',
   PRODUCTS = 'products',
-  DELIVERY_DRIVERS = 'delivery_drivers',
+  DELIVERY_DRIVERS = '',
   DELIVERY_VEHICLES = 'delivery_vehicles',
   AUTH = 'auth',
   PLATFORMS = 'platforms',

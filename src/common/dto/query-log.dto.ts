@@ -1,14 +1,10 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from './pagination.dto';
 import { LogAction } from '../../logs/enums/log-action.enum';
 
 export class QueryLogDto extends PaginationDto {
-  @ApiPropertyOptional({ example: 'users' })
-  @IsOptional()
-  @IsString()
-  module?: string;
-
   @ApiPropertyOptional({ enum: LogAction })
   @IsOptional()
   @IsEnum(LogAction)
@@ -16,13 +12,15 @@ export class QueryLogDto extends PaginationDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  user_uuid?: string;
+  @Type(() => Number)
+  @IsInt()
+  user_id?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  entity_uuid?: string;
+  @Type(() => Number)
+  @IsInt()
+  module_id?: number;
 
   @ApiPropertyOptional({ example: '2025-01-01' })
   @IsOptional()

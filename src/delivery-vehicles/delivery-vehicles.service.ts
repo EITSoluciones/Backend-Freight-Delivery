@@ -67,9 +67,7 @@ export class DeliveryVehiclesService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_VEHICLES,
       action: LogAction.CREATE,
-      entityUuid: createdVehicle.uuid,
-      entityName: createdVehicle.plate_number,
-      description: `Vehiculo de reparto creado: ${createdVehicle.plate_number}`,
+      description: `Vehiculo de reparto creado: ${createdVehicle.plate_number}. UUID: ${createdVehicle.uuid}`,
       newData: {
         plate_number: createdVehicle.plate_number,
         vehicle_type: createdVehicle.vehicle_type,
@@ -171,9 +169,7 @@ export class DeliveryVehiclesService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_VEHICLES,
       action: LogAction.UPDATE,
-      entityUuid: updatedVehicle.uuid,
-      entityName: updatedVehicle.plate_number,
-      description: `Vehiculo de reparto actualizado: ${updatedVehicle.plate_number}`,
+      description: `Vehiculo de reparto actualizado: ${updatedVehicle.plate_number}. UUID: ${updatedVehicle.uuid}`,
       oldData,
       newData: updateDeliveryVehicleDto,
     });
@@ -204,9 +200,7 @@ export class DeliveryVehiclesService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_VEHICLES,
       action: LogAction.DELETE,
-      entityUuid: vehicle.uuid,
-      entityName: vehicle.plate_number,
-      description: `Vehiculo de reparto eliminado: ${vehicle.plate_number}`,
+      description: `Vehiculo de reparto eliminado: ${vehicle.plate_number}. UUID: ${vehicle.uuid}`,
       oldData: {
         plate_number: vehicle.plate_number,
         delivery_driver_uuid: activeDriverUuid,
