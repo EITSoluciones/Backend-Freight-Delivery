@@ -30,9 +30,7 @@ export class ProductsService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.PRODUCTS,
       action: LogAction.CREATE,
-      entityUuid: savedProduct.uuid,
-      entityName: savedProduct.nombre,
-      description: `Producto creado: ${savedProduct.nombre}`,
+      description: `Producto creado: ${savedProduct.nombre}. UUID: ${savedProduct.uuid}`,
       newData: { nombre: savedProduct.nombre, stock: savedProduct.stock },
     });
 
@@ -89,9 +87,7 @@ export class ProductsService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.PRODUCTS,
       action: LogAction.UPDATE,
-      entityUuid: updatedProduct.uuid,
-      entityName: updatedProduct.nombre,
-      description: `Producto actualizado: ${updatedProduct.nombre}`,
+      description: `Producto actualizado: ${updatedProduct.nombre}. UUID: ${updatedProduct.uuid}`,
       oldData,
       newData: updateProductDto,
     });
@@ -118,9 +114,7 @@ export class ProductsService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.PRODUCTS,
       action: LogAction.DELETE,
-      entityUuid: product.uuid,
-      entityName: product.nombre,
-      description: `Producto eliminado: ${product.nombre}`,
+      description: `Producto eliminado: ${product.nombre}. UUID: ${product.uuid}`,
       oldData: { nombre: product.nombre, stock: product.stock },
     });
 

@@ -73,9 +73,7 @@ export class DeliveryDriversService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_DRIVERS,
       action: LogAction.CREATE,
-      entityUuid: savedDriver.uuid,
-      entityName: `Driver ${savedDriver.uuid}`,
-      description: `Repartidor creado con user id: ${savedDriver.user_id}`,
+      description: `Repartidor creado con user id: ${savedDriver.user_id}. UUID: ${savedDriver.uuid}`,
       newData: { ...createdDriver },
     });
 
@@ -225,9 +223,7 @@ export class DeliveryDriversService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_DRIVERS,
       action: LogAction.UPDATE,
-      entityUuid: updatedDriver.uuid,
-      entityName: `Driver ${updatedDriver.uuid}`,
-      description: `Repartidor actualizado: ${updatedDriver.uuid}`,
+      description: `Repartidor actualizado. UUID: ${updatedDriver.uuid}`,
       oldData,
       newData: updateDeliveryDriverDto,
     });
@@ -250,9 +246,7 @@ export class DeliveryDriversService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.DELIVERY_DRIVERS,
       action: LogAction.DELETE,
-      entityUuid: driver.uuid,
-      entityName: `Driver ${driver.uuid}`,
-      description: `Repartidor eliminado: ${driver.uuid}`,
+      description: `Repartidor eliminado. UUID: ${driver.uuid}`,
       oldData: { ...driver },
     });
 

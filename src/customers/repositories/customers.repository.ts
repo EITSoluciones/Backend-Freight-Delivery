@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {  DeepPartial, Repository } from 'typeorm';
+import { DeepPartial, In, Repository } from 'typeorm';
 import { Customer } from '../entities/customer.entity';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
@@ -31,12 +31,12 @@ export class CustomersRepository {
     const { limit = 10, page = 1, is_active } = queryDto;
 
     return this.repository.findAndCount({
-       where: {
+      where: {
         ...(is_active !== undefined && { is_active: is_active === 'true' }),
       },
       take: limit,
       skip: (page - 1) * limit,
-    }); 
+    });
   }
 
   async findByUuidWithActiveAddresses(uuid: string): Promise<Customer | null> {
@@ -61,7 +61,19 @@ export class CustomersRepository {
     });
   }
 
-  findActive(){
+  findByUuid(uuid: string): Promise<Customer | null> {
+    return this.repository.findOne({ where: { uuid } });
+  }
+
+  findByUuids(uuids: string[]): Promise<Customer[]> {
+    return this.repository.find({ where: { uuid: In(uuids) } });
+  }
+
+  findByCodes(codes: string[]): Promise<Customer[]> {
+    return this.repository.find({ where: { code: In(codes) } });
+  }
+
+  findActive() {
     return this.repository.find({
       where: { is_active: true },
       order: { name: 'ASC' },

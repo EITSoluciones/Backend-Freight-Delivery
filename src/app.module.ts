@@ -22,6 +22,8 @@ import { AppConfigModule } from './app-config/app-config.module';
 import { TwilioModule } from './twilio/twilio.module';
 import { ShipmentsModule } from './shipments/shipments.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { CentersModule } from './centers/centers.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -60,6 +62,8 @@ import { NotificationsModule } from './notifications/notifications.module';
     TwilioModule,
     ShipmentsModule,
     NotificationsModule,
+    CentersModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -31,6 +31,13 @@ export class ModulesRepository {
     });
   }
 
+  findActive(): Promise<Module[]> {
+    return this.moduleRepository.find({
+      where: { is_active: true },
+      order: { name: 'ASC' },
+    });
+  }
+
   findByUuid(uuid: string): Promise<Module | null> {
     return this.moduleRepository.findOne({ where: { uuid } });
   }

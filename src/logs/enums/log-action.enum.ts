@@ -7,4 +7,5 @@ export enum LogAction {
   REFRESH_TOKEN = 'REFRESH_TOKEN',
   VIEW = 'VIEW',
   SEARCH = 'SEARCH',
+  FAILED = 'FAILED',
 }

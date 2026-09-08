@@ -17,6 +17,16 @@ export class ModulesService {
     private readonly dbErrorHandler: DBErrorHandlerService,
   ) {}
 
+  async getModulesCatalog(): Promise<SuccessResponseDto<Module[]>> {
+    const modules = await this.modulesRepository.findActive();
+
+    return new SuccessResponseDto(
+      true,
+      'Módulos obtenidos exitosamente!',
+      modules,
+    );
+  }
+
   async findAll(
     paginationDto: PaginationDto,
   ): Promise<PaginatedResponse<Module>> {

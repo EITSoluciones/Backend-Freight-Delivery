@@ -433,6 +433,74 @@ export async function seedPermissions(dataSource: DataSource) {
       is_active: true,
       moduleUrl: '/app-config',
     },
+
+    // Centers
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000083',
+      code: Permissions.CentersView,
+      name: 'Visualizar Centros',
+      description: 'Permite visualizar centros',
+      is_active: true,
+      moduleUrl: '/centers',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000084',
+      code: Permissions.CentersCreate,
+      name: 'Crear Centros',
+      description: 'Permite crear centros',
+      is_active: true,
+      moduleUrl: '/centers',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000085',
+      code: Permissions.CentersUpdate,
+      name: 'Actualizar Centros',
+      description: 'Permite actualizar centros',
+      is_active: true,
+      moduleUrl: '/centers',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000086',
+      code: Permissions.CentersDelete,
+      name: 'Eliminar Centros',
+      description: 'Permite eliminar centros',
+      is_active: true,
+      moduleUrl: '/centers',
+    },
+
+    // Orders
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000087',
+      code: Permissions.OrdersView,
+      name: 'Visualizar Pedidos',
+      description: 'Permite visualizar pedidos',
+      is_active: true,
+      moduleUrl: '/orders',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000088',
+      code: Permissions.OrdersCreate,
+      name: 'Crear Pedidos',
+      description: 'Permite crear pedidos',
+      is_active: true,
+      moduleUrl: '/orders',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000089',
+      code: Permissions.OrdersUpdate,
+      name: 'Actualizar Pedidos',
+      description: 'Permite actualizar pedidos',
+      is_active: true,
+      moduleUrl: '/orders',
+    },
+    {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000090',
+      code: Permissions.OrdersDelete,
+      name: 'Eliminar Pedidos',
+      description: 'Permite eliminar pedidos',
+      is_active: true,
+      moduleUrl: '/orders',
+    },
   ];
 
   for (const item of permissions) {
