@@ -15,6 +15,7 @@ import { Permissions } from 'src/auth/interfaces';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { User } from 'src/users/entities/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { ImportOrdersDto } from './dto/import-orders.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrdersService } from './orders.service';
 
@@ -30,6 +31,27 @@ export class OrdersController {
   @Auth(Permissions.OrdersCreate)
   create(@Body() createOrderDto: CreateOrderDto, @GetUser() currentUser: User) {
     return this.ordersService.create(createOrderDto, currentUser);
+  }
+
+  @Post('import')
+  @Auth(Permissions.OrdersCreate)
+  import(
+    @Body() importOrdersDto: ImportOrdersDto,
+    @GetUser() currentUser: User,
+  ) {
+    return this.ordersService.import(importOrdersDto, currentUser);
+  }
+
+  @Get('import-template')
+  @Auth(Permissions.OrdersCreate)
+  getImportTemplate() {
+    return this.ordersService.getImportTemplate();
+  }
+
+  @Get('catalog')
+  @Auth(Permissions.OrdersView)
+  getOrdersCatalog() {
+    return this.ordersService.getOrdersCatalog();
   }
 
   @Get()

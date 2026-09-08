@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { DataSource, DeepPartial, In, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { Order } from '../entities/order.entity';
 
@@ -9,6 +9,7 @@ export class OrdersRepository {
   constructor(
     @InjectRepository(Order)
     private readonly repository: Repository<Order>,
+    private readonly dataSource: DataSource,
   ) {}
 
   create(order: DeepPartial<Order>): Order {
@@ -17,6 +18,12 @@ export class OrdersRepository {
 
   save(order: Order): Promise<Order> {
     return this.repository.save(order);
+  }
+
+  createMany(orders: DeepPartial<Order>[]): Promise<Order[]> {
+    return this.dataSource.transaction((manager) =>
+      manager.save(manager.create(Order, orders)),
+    );
   }
 
   findAll(paginationDto: PaginationDto): Promise<[Order[], number]> {
@@ -37,6 +44,17 @@ export class OrdersRepository {
     return this.repository.findOne({
       where: { uuid },
       relations: { customer: true, origin_center: true },
+    });
+  }
+
+  findByOrderNumbers(orderNumbers: string[]): Promise<Order[]> {
+    return this.repository.find({ where: { order_number: In(orderNumbers) } });
+  }
+
+  findActive(): Promise<Order[]> {
+    return this.repository.find({
+      where: { is_active: true },
+      order: { order_number: 'ASC' },
     });
   }
 

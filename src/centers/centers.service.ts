@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   PaginatedResponse,
   SuccessResponseDto,
@@ -10,6 +10,7 @@ import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogsService } from 'src/logs/logs.service';
 import { User } from 'src/users/entities/user.entity';
 import { CreateCenterDto } from './dto/create-center.dto';
+import { ImportCentersDto } from './dto/import-centers.dto';
 import { UpdateCenterDto } from './dto/update-center.dto';
 import { Center } from './entities/center.entity';
 import { CentersRepository } from './repositories/centers.repository';
@@ -60,6 +61,93 @@ export class CentersService {
       page,
       limit,
       'Centros obtenidos exitosamente!',
+    );
+  }
+
+  async getCentersCatalog(): Promise<
+    SuccessResponseDto<{ uuid: string; code: string; name: string }[]>
+  > {
+    const centers = await this.centersRepository.findActive();
+
+    return new SuccessResponseDto(
+      true,
+      'Catálogo de centros obtenido exitosamente!',
+      centers.map(({ uuid, code, name }) => ({ uuid, code, name })),
+    );
+  }
+
+  async import(
+    importCentersDto: ImportCentersDto,
+    currentUser?: User,
+  ): Promise<SuccessResponseDto<Center[]>> {
+    const centersToCreate = importCentersDto.centers.map((center) => ({
+      ...center,
+      code: center.code.trim().toUpperCase(),
+    }));
+    const codes = centersToCreate.map((center) => center.code);
+    const duplicatedCodes = codes.filter(
+      (code, index) => codes.indexOf(code) !== index,
+    );
+
+    if (duplicatedCodes.length) {
+      throw new BadRequestException(
+        `Hay códigos de centro duplicados en la carga: ${[...new Set(duplicatedCodes)].join(', ')}.`,
+      );
+    }
+
+    const existingCenters = await this.centersRepository.findByCodes(codes);
+
+    if (existingCenters.length) {
+      throw new BadRequestException(
+        `Ya existen centros con los códigos: ${existingCenters.map((center) => center.code).join(', ')}.`,
+      );
+    }
+
+    try {
+      const savedCenters = await this.centersRepository.createMany(centersToCreate);
+
+      await this.logsService.log(currentUser || null, {
+        module: LogModule.CENTERS,
+        action: LogAction.CREATE,
+        description: `Carga masiva de centros: ${savedCenters.length} registros creados.`,
+        newData: { count: savedCenters.length, codes },
+      });
+
+      return new SuccessResponseDto(
+        true,
+        'Centros cargados exitosamente!',
+        savedCenters,
+      );
+    } catch (error) {
+      this.dbErrorHandler.handleDBErrors(error);
+    }
+  }
+
+  getImportTemplate(): SuccessResponseDto<{ centers: CreateCenterDto[] }> {
+    return new SuccessResponseDto(
+      true,
+      'Plantilla de centros obtenida exitosamente!',
+      {
+        centers: [
+          {
+            code: 'CEDIS-001',
+            name: 'Centro de Distribución Norte',
+            description: 'Centro principal de operaciones',
+            latitude: 19.427,
+            longitude: -99.1677,
+            street: 'Avenida Reforma',
+            internal_number: '12',
+            external_number: '123',
+            neighborhood: 'Juárez',
+            district: 'Cuauhtémoc',
+            city: 'Ciudad de México',
+            state: 'Ciudad de México',
+            country: 'México',
+            postal_code: '06600',
+            is_active: true,
+          },
+        ],
+      },
     );
   }
 

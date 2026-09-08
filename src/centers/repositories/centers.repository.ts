@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { DataSource, DeepPartial, In, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { Center } from '../entities/center.entity';
 
@@ -9,6 +9,7 @@ export class CentersRepository {
   constructor(
     @InjectRepository(Center)
     private readonly repository: Repository<Center>,
+    private readonly dataSource: DataSource,
   ) {}
 
   create(center: DeepPartial<Center>): Center {
@@ -17,6 +18,12 @@ export class CentersRepository {
 
   save(center: Center): Promise<Center> {
     return this.repository.save(center);
+  }
+
+  createMany(centers: DeepPartial<Center>[]): Promise<Center[]> {
+    return this.dataSource.transaction((manager) =>
+      manager.save(manager.create(Center, centers)),
+    );
   }
 
   findAll(paginationDto: PaginationDto): Promise<[Center[], number]> {
@@ -34,6 +41,21 @@ export class CentersRepository {
 
   findByUuid(uuid: string): Promise<Center | null> {
     return this.repository.findOne({ where: { uuid } });
+  }
+
+  findByCodes(codes: string[]): Promise<Center[]> {
+    return this.repository.find({ where: { code: In(codes) } });
+  }
+
+  findByUuids(uuids: string[]): Promise<Center[]> {
+    return this.repository.find({ where: { uuid: In(uuids) } });
+  }
+
+  findActive(): Promise<Center[]> {
+    return this.repository.find({
+      where: { is_active: true },
+      order: { name: 'ASC' },
+    });
   }
 
   softDeleteByUuid(uuid: string) {

@@ -17,8 +17,12 @@ import { LogAction } from 'src/logs/enums/log-action.enum';
 import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogsService } from 'src/logs/logs.service';
 import { User } from 'src/users/entities/user.entity';
+import { DeepPartial } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CreateImportOrderDto } from './dto/create-import-order.dto';
+import { ImportOrdersDto } from './dto/import-orders.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { OrderPriority } from './enums/order-priority.enum';
 import { Order } from './entities/order.entity';
 import { OrdersRepository } from './repositories/orders.repository';
 
@@ -36,23 +40,10 @@ export class OrdersService {
     createOrderDto: CreateOrderDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Order>> {
-    const { customer_uuid, origin_center_uuid, ...orderData } = createOrderDto;
-    const customer = await this.getCustomerByUuid(customer_uuid);
-    const originCenter = origin_center_uuid
-      ? await this.getCenterByUuid(origin_center_uuid)
-      : undefined;
-
-    this.validateDeliveryWindow(
-      orderData.delivery_window_start,
-      orderData.delivery_window_end,
-    );
+    const orderData = await this.getOrderData(createOrderDto);
 
     try {
-      const order = this.ordersRepository.create({
-        ...orderData,
-        customer_id: customer.id,
-        origin_center_id: originCenter?.id,
-      });
+      const order = this.ordersRepository.create(orderData);
       const savedOrder = await this.ordersRepository.save(order);
       const createdOrder = await this.getOrderByUuid(savedOrder.uuid);
 
@@ -85,6 +76,153 @@ export class OrdersService {
       page,
       limit,
       'Pedidos obtenidos exitosamente!',
+    );
+  }
+
+  async getOrdersCatalog(): Promise<
+    SuccessResponseDto<{ uuid: string; order_number: string }[]>
+  > {
+    const orders = await this.ordersRepository.findActive();
+
+    return new SuccessResponseDto(
+      true,
+      'Catálogo de pedidos obtenido exitosamente!',
+      orders.map(({ uuid, order_number }) => ({ uuid, order_number })),
+    );
+  }
+
+  async import(
+    importOrdersDto: ImportOrdersDto,
+    currentUser?: User,
+  ): Promise<SuccessResponseDto<Order[]>> {
+    const ordersToImport = importOrdersDto.orders.map((order) => ({
+      ...order,
+      order_number: order.order_number.trim(),
+      customer_code: order.customer_code.trim().toUpperCase(),
+      origin_center_code: order.origin_center_code.trim().toUpperCase(),
+    }));
+    const orderNumbers = ordersToImport.map((order) => order.order_number);
+    const duplicatedOrderNumbers = orderNumbers.filter(
+      (orderNumber, index) => orderNumbers.indexOf(orderNumber) !== index,
+    );
+
+    if (duplicatedOrderNumbers.length) {
+      throw new BadRequestException(
+        `Hay números de pedido duplicados en la carga: ${[...new Set(duplicatedOrderNumbers)].join(', ')}.`,
+      );
+    }
+
+    const [existingOrders, customers, centers] = await Promise.all([
+      this.ordersRepository.findByOrderNumbers(orderNumbers),
+      this.customersRepository.findByCodes(
+        [...new Set(ordersToImport.map((order) => order.customer_code))],
+      ),
+      this.centersRepository.findByCodes(
+        [...new Set(ordersToImport.map((order) => order.origin_center_code))],
+      ),
+    ]);
+
+    if (existingOrders.length) {
+      throw new BadRequestException(
+        `Ya existen pedidos con los números: ${existingOrders.map((order) => order.order_number).join(', ')}.`,
+      );
+    }
+
+    const customersByCode = new Map(
+      customers.map((customer) => [customer.code, customer]),
+    );
+    const centersByCode = new Map(
+      centers.map((center) => [center.code, center]),
+    );
+    const ordersToCreate = ordersToImport.map(
+      ({ customer_code, origin_center_code, ...orderData }) => {
+        const customer = customersByCode.get(customer_code);
+        const originCenter = centersByCode.get(origin_center_code);
+
+        if (!customer) {
+          throw new NotFoundException(
+            `Cliente con código ${customer_code} no encontrado!`,
+          );
+        }
+
+        if (!originCenter) {
+          throw new NotFoundException(
+            `Centro con código ${origin_center_code} no encontrado!`,
+          );
+        }
+
+        this.validateDeliveryWindow(
+          orderData.delivery_window_start,
+          orderData.delivery_window_end,
+        );
+
+        return {
+          ...orderData,
+          customer_id: customer.id,
+          origin_center_id: originCenter.id,
+        };
+      },
+    );
+
+    try {
+      const savedOrders = await this.ordersRepository.createMany(ordersToCreate);
+
+      await this.logsService.log(currentUser || null, {
+        module: LogModule.ORDERS,
+        action: LogAction.CREATE,
+        description: `Carga masiva de pedidos: ${savedOrders.length} registros creados.`,
+        newData: { count: savedOrders.length, order_numbers: orderNumbers },
+      });
+
+      return new SuccessResponseDto(
+        true,
+        'Pedidos cargados exitosamente!',
+        savedOrders,
+      );
+    } catch (error) {
+      this.dbErrorHandler.handleDBErrors(error);
+    }
+  }
+
+  getImportTemplate(): SuccessResponseDto<{ orders: CreateImportOrderDto[] }> {
+    return new SuccessResponseDto(
+      true,
+      'Plantilla de pedidos obtenida exitosamente!',
+      {
+        orders: [
+          {
+            order_number: 'PED-000001',
+            order_date: '2026-01-01T09:00:00.000Z',
+            customer_code: 'CLI-001',
+            origin_center_code: 'CEDIS-001',
+            delivery_date: '2026-01-02T13:00:00.000Z',
+            priority: OrderPriority.MEDIUM,
+            additional_notes: 'Entregar por acceso principal',
+            price: 1250.5,
+            volume: 1.25,
+            weight: 350.75,
+            delivery_window_start: '2026-01-02T09:00:00.000Z',
+            delivery_window_end: '2026-01-02T13:00:00.000Z',
+            recipient_name: 'María López',
+            recipient_email: 'maria.lopez@example.com',
+            recipient_phone: '5551234567',
+            recipient_secondary_phone: '5559876543',
+            latitude: 19.427,
+            longitude: -99.1677,
+            street: 'Avenida Reforma',
+            internal_number: '12',
+            external_number: '123',
+            neighborhood: 'Juárez',
+            district: 'Cuauhtémoc',
+            city: 'Ciudad de México',
+            state: 'Ciudad de México',
+            country: 'México',
+            postal_code: '06600',
+            reference: 'Acceso por la puerta principal',
+            is_active: true,
+          },
+        ],
+      },
     );
   }
 
@@ -193,6 +331,27 @@ export class OrdersService {
     }
 
     return center;
+  }
+
+  private async getOrderData(
+    createOrderDto: CreateOrderDto,
+  ): Promise<DeepPartial<Order>> {
+    const { customer_uuid, origin_center_uuid, ...orderData } = createOrderDto;
+    const [customer, originCenter] = await Promise.all([
+      this.getCustomerByUuid(customer_uuid),
+      this.getCenterByUuid(origin_center_uuid),
+    ]);
+
+    this.validateDeliveryWindow(
+      orderData.delivery_window_start,
+      orderData.delivery_window_end,
+    );
+
+    return {
+      ...orderData,
+      customer_id: customer.id,
+      origin_center_id: originCenter.id,
+    };
   }
 
   private validateDeliveryWindow(

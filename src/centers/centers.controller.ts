@@ -16,6 +16,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { User } from 'src/users/entities/user.entity';
 import { CentersService } from './centers.service';
 import { CreateCenterDto } from './dto/create-center.dto';
+import { ImportCentersDto } from './dto/import-centers.dto';
 import { UpdateCenterDto } from './dto/update-center.dto';
 
 @ApiTags('Centers')
@@ -33,6 +34,27 @@ export class CentersController {
     @GetUser() currentUser: User,
   ) {
     return this.centersService.create(createCenterDto, currentUser);
+  }
+
+  @Post('import')
+  @Auth(Permissions.CentersCreate)
+  import(
+    @Body() importCentersDto: ImportCentersDto,
+    @GetUser() currentUser: User,
+  ) {
+    return this.centersService.import(importCentersDto, currentUser);
+  }
+
+  @Get('import-template')
+  @Auth(Permissions.CentersCreate)
+  getImportTemplate() {
+    return this.centersService.getImportTemplate();
+  }
+
+  @Get('catalog')
+  @Auth(Permissions.CentersView)
+  getCentersCatalog() {
+    return this.centersService.getCentersCatalog();
   }
 
   @Get()
