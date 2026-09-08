@@ -61,7 +61,13 @@ export class Address {
     type: 'varchar',
     length: 255,
   })
-  municipality!: string;
+  district!: string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+  })
+  city!: string;
 
   @Column({
     type: 'varchar',
@@ -77,10 +83,15 @@ export class Address {
 
   @Column({
     type: 'varchar',
-    length: 10,
+    length: 12,
     name: 'postal_code',
   })
   postal_code!: string;
+
+  @Column({
+    type: 'text',
+  })
+  reference!: string;
 
   @Column({
     type: 'decimal',

@@ -21,6 +21,13 @@ export class ModulesController {
     return this.modulesService.findAll(paginationDto);
   }
 
+  /** Obtener Catálogo de Módulos */
+  @Get('catalog')
+  @Auth()
+  getModulesCatalog() {
+    return this.modulesService.getModulesCatalog();
+  }
+
   /** Obtener Módulo */
   @Get(':uuid')
   findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {

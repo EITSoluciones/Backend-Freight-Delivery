@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { AuditErrorInterceptor } from './common/interceptors/audit-error.interceptor';
+import { LogsService } from './logs/logs.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -42,7 +44,10 @@ async function bootstrap() {
   );
 
   // Registrar interceptor global
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(
+    new AuditErrorInterceptor(app.get(LogsService)),
+    new ResponseInterceptor(),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('Freight Delivery - API REST')

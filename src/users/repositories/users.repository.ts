@@ -56,6 +56,14 @@ export class UsersRepository {
     return [users.map((user) => this.withRoles(user)), total];
   }
 
+  findActiveCatalog(): Promise<User[]> {
+    return this.repository.find({
+      select: { id: true, username: true },
+      where: { is_active: true },
+      order: { username: 'ASC' },
+    });
+  }
+
   async findByUuid(uuid: string): Promise<User | null> {
     const user = await this.repository.findOne({
       where: { uuid },

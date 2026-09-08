@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, DeepPartial, Repository } from 'typeorm';
-import { QueryCustomerDto } from '../dto/query-customer.dto';
+import { DeepPartial, In, Repository } from 'typeorm';
 import { Customer } from '../entities/customer.entity';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class CustomersRepository {
@@ -27,14 +27,13 @@ export class CustomersRepository {
     return this.repository.softRemove(customer);
   }
 
-  findAll(queryDto: QueryCustomerDto): Promise<[Customer[], number]> {
-    const { limit = 10, page = 1, start_date, end_date } = queryDto;
+  findAll(queryDto: PaginationDto): Promise<[Customer[], number]> {
+    const { limit = 10, page = 1, is_active } = queryDto;
 
     return this.repository.findAndCount({
-      where:
-        start_date && end_date
-          ? { created_at: Between(new Date(start_date), new Date(end_date)) }
-          : {},
+      where: {
+        ...(is_active !== undefined && { is_active: is_active === 'true' }),
+      },
       take: limit,
       skip: (page - 1) * limit,
     });
@@ -59,6 +58,25 @@ export class CustomersRepository {
     return this.repository.findOne({
       where: { uuid },
       relations: { addresses: true },
+    });
+  }
+
+  findByUuid(uuid: string): Promise<Customer | null> {
+    return this.repository.findOne({ where: { uuid } });
+  }
+
+  findByUuids(uuids: string[]): Promise<Customer[]> {
+    return this.repository.find({ where: { uuid: In(uuids) } });
+  }
+
+  findByCodes(codes: string[]): Promise<Customer[]> {
+    return this.repository.find({ where: { code: In(codes) } });
+  }
+
+  findActive() {
+    return this.repository.find({
+      where: { is_active: true },
+      order: { name: 'ASC' },
     });
   }
 }

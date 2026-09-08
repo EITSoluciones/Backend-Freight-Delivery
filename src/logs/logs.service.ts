@@ -1,122 +1,86 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { SystemLog } from './entities/system-log.entity';
 import { QueryLogDto } from '../common/dto/query-log.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { PaginatedResponse } from '../common/dto/success-response.dto';
 import { LogData } from './interfaces/log-data.interface';
 import { User } from '../users/entities/user.entity';
-import { LOG_EVENT, LogEventPayload } from './events/log.event';
 import { LogsRepository } from './repositories/logs.repository';
+import { Module as ModuleEntity } from '../modules/entities/module.entity';
+
+interface LogPayload {
+  user: Pick<User, 'id' | 'platforms'> | null;
+  logData: LogData;
+  request: {
+    ip: string;
+    userAgent: string | null;
+    platform: string | null;
+  } | null;
+}
 
 @Injectable()
-export class LogsService implements OnModuleInit, OnModuleDestroy {
+export class LogsService {
   private readonly DEFAULT_PLATFORM = 'web';
-  private pendingLogs: LogEventPayload[] = [];
-  private readonly BATCH_SIZE = 10;
-  private flushInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly logsRepository: LogsRepository,
-    private readonly eventEmitter: EventEmitter2,
-  ) {}
+    @InjectRepository(ModuleEntity)
+    private readonly modulesRepository: Repository<ModuleEntity>,
+  ) { }
 
-  onModuleInit() {
-    this.flushInterval = setInterval(() => {
-      this.flushLogs();
-    }, 5000);
-  }
-
-  onModuleDestroy() {
-    if (this.flushInterval) {
-      clearInterval(this.flushInterval);
-    }
-    this.flushLogs();
-  }
-
-  log(user: User | null, logData: LogData, request?: any): void {
-    const payload: LogEventPayload = {
+  async log(
+    user: User | null,
+    logData: LogData,
+    request?: any,
+  ): Promise<void> {
+    const payload: LogPayload = {
       user: user
         ? {
-            uuid: user.uuid,
-            username: user.username,
-            platforms: user.platforms,
-          }
+          id: user.id,
+          platforms: user.platforms,
+        }
         : null,
       logData,
       request: request
         ? {
-            ip: this.extractIpAddress(request),
-            userAgent: request.headers?.['user-agent'] || null,
-            platform: request.headers?.['x-platform-code'] || null,
-          }
+          ip: this.extractIpAddress(request),
+          userAgent: request.headers?.['user-agent'] || null,
+          platform: request.headers?.['x-platform-code'] || null,
+        }
         : null,
     };
 
-    this.pendingLogs.push(payload);
-
-    if (this.pendingLogs.length >= this.BATCH_SIZE) {
-      this.flushLogs();
-    }
-  }
-
-  logAsync(user: User | null, logData: LogData, request?: any): void {
-    this.eventEmitter.emit(LOG_EVENT, {
-      user: user
-        ? {
-            uuid: user.uuid,
-            username: user.username,
-            platforms: user.platforms,
-          }
-        : null,
-      logData,
-      request: request
-        ? {
-            ip: this.extractIpAddress(request),
-            userAgent: request.headers?.['user-agent'] || null,
-            platform: request.headers?.['x-platform-code'] || null,
-          }
-        : null,
+    const module = await this.modulesRepository.findOneBy({
+      code: logData.module,
     });
+    const log = this.createLogEntity(payload, module?.id ?? null);
+
+    await this.logsRepository.saveMany([log]);
   }
 
-  private async flushLogs(): Promise<void> {
-    if (this.pendingLogs.length === 0) return;
-
-    const logsToSave = this.pendingLogs.splice(0, this.BATCH_SIZE);
-
-    try {
-      const logEntities = logsToSave.map((payload) =>
-        this.createLogEntity(payload),
-      );
-      await this.logsRepository.saveMany(logEntities);
-    } catch (error) {
-      console.error('Error flushing logs:', error);
-      this.pendingLogs.unshift(...logsToSave);
-    }
-  }
-
-  private createLogEntity(payload: LogEventPayload): SystemLog {
+  private createLogEntity(
+    payload: LogPayload,
+    moduleId: number | null,
+  ): SystemLog {
     const log = new SystemLog();
     const { user, logData, request } = payload;
 
-    log.userUuid = user?.uuid || null;
-    log.userUsername = user?.username || null;
-    log.module = logData.module;
+    log.userId = user?.id ?? null;
+    log.moduleId = moduleId;
     log.action = logData.action;
-    log.entityUuid = logData.entityUuid || null;
-    log.entityName = logData.entityName || null;
-    log.description = logData.description || null;
-    log.oldData = logData.oldData || null;
-    log.newData = logData.newData || null;
+    log.description = logData.description ?? null;
+    log.oldData = logData.oldData ?? null;
+    log.newData = logData.newData ?? null;
 
     if (request) {
-      log.ipAddress = request.ip || null;
-      log.userAgent = request.userAgent || null;
+      log.ipAddress = request.ip ?? null;
+      log.userAgent = request.userAgent ?? null;
       log.platform =
-        request.platform || this.getUserPlatform(user) || this.DEFAULT_PLATFORM;
+        request.platform ?? this.getUserPlatform(user) ?? this.DEFAULT_PLATFORM;
     } else {
-      log.platform = this.getUserPlatform(user) || this.DEFAULT_PLATFORM;
+      log.platform = this.getUserPlatform(user) ?? this.DEFAULT_PLATFORM;
     }
 
     return log;
@@ -144,8 +108,7 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     }
 
     if (request.socket?.remoteAddress) {
-      const addr = request.socket.remoteAddress;
-      return addr.includes('::') ? addr : addr;
+      return String(request.socket.remoteAddress);
     }
 
     if (request.connection?.remoteAddress) {
@@ -158,16 +121,7 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
   async findAll(
     queryLogDto: QueryLogDto,
   ): Promise<PaginatedResponse<SystemLog>> {
-    const {
-      limit = 10,
-      page = 1,
-      module,
-      action,
-      user_uuid,
-      entity_uuid,
-      start_date,
-      end_date,
-    } = queryLogDto;
+    const { limit = 10, page = 1 } = queryLogDto;
 
     const [logs, total] = await this.logsRepository.findAll(queryLogDto);
 
@@ -180,24 +134,14 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
-  async findByEntityUuid(entityUuid: string) {
-    const logs = await this.logsRepository.findByEntityUuid(entityUuid);
-
-    return {
-      success: true,
-      message: 'Entity logs retrieved successfully!',
-      data: logs,
-    };
-  }
-
-  async findByUserUuid(
-    userUuid: string,
+  async findByUserId(
+    userId: number,
     paginationDto?: PaginationDto,
   ): Promise<PaginatedResponse<SystemLog>> {
     const { limit = 10, page = 1 } = paginationDto || {};
 
-    const [logs, total] = await this.logsRepository.findByUserUuid(
-      userUuid,
+    const [logs, total] = await this.logsRepository.findByUserId(
+      userId,
       paginationDto,
     );
 
@@ -211,6 +155,6 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async findMyLogs(user: User, paginationDto?: PaginationDto) {
-    return this.findByUserUuid(user.uuid, paginationDto);
+    return this.findByUserId(user.id, paginationDto);
   }
 }

@@ -57,9 +57,7 @@ export class RolesService {
       await this.logsService.log(currentUser || null, {
         module: LogModule.ROLES,
         action: LogAction.CREATE,
-        entityUuid: savedRole.uuid,
-        entityName: savedRole.name,
-        description: `Rol creado: ${savedRole.name}`,
+        description: `Rol creado: ${savedRole.name}. UUID: ${savedRole.uuid}`,
         newData: { name: savedRole.name, code: savedRole.code },
       });
 
@@ -120,9 +118,7 @@ export class RolesService {
       await this.logsService.log(currentUser || null, {
         module: LogModule.ROLES,
         action: LogAction.UPDATE,
-        entityUuid: updatedRole.uuid,
-        entityName: updatedRole.name,
-        description: `Rol actualizado: ${updatedRole.name}`,
+        description: `Rol actualizado: ${updatedRole.name}. UUID: ${updatedRole.uuid}`,
         oldData,
         newData: updateRoleDto,
       });
@@ -152,9 +148,7 @@ export class RolesService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.ROLES,
       action: LogAction.DELETE,
-      entityUuid: role.uuid,
-      entityName: role.name,
-      description: `Rol eliminado: ${role.name}`,
+      description: `Rol eliminado: ${role.name}. UUID: ${role.uuid}`,
       oldData: { name: role.name, code: role.code },
     });
 
@@ -268,9 +262,7 @@ export class RolesService {
       await this.logsService.log(currentUser || null, {
         module: LogModule.ROLES,
         action: LogAction.UPDATE,
-        entityUuid: role.uuid,
-        entityName: role.name,
-        description: `Permisos actualizados para rol: ${role.name}`,
+        description: `Permisos actualizados para rol: ${role.name}. UUID: ${role.uuid}`,
         oldData: { permissions: oldPermissions },
         newData: { permissions: updateRolePermissionsDto.permission_uuids },
       });

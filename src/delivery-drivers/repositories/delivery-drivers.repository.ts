@@ -24,14 +24,16 @@ export class DeliveryDriversRepository {
   }
 
   findAll(paginationDto?: PaginationDto): Promise<[DeliveryDriver[], number]> {
-    const { limit = 10, page = 1 } = paginationDto || {};
-
+    const { limit = 10, page = 1, is_active } = paginationDto || {};
     return this.repository.findAndCount({
       relations: [
         'user',
         'vehicle_assignments',
         'vehicle_assignments.delivery_vehicle',
       ],
+      where: {
+        ...(is_active !== undefined && { is_active: is_active === 'true' }),
+      },
       order: {
         created_at: 'DESC',
       },

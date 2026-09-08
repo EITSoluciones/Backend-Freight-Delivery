@@ -51,9 +51,7 @@ export class UsersService {
       await this.logsService.log(currentUser || null, {
         module: LogModule.USERS,
         action: LogAction.CREATE,
-        entityUuid: savedUser.uuid,
-        entityName: savedUser.username,
-        description: `Usuario creado: ${savedUser.username}`,
+        description: `Usuario creado: ${savedUser.username}. UUID: ${savedUser.uuid}`,
         newData: { username: savedUser.username, email: savedUser.email },
       });
 
@@ -80,6 +78,18 @@ export class UsersService {
       page,
       limit,
       'Usuarios obtenidos exitosamente!',
+    );
+  }
+
+  async getUsersCatalog(): Promise<
+    SuccessResponseDto<{ id: number; username: string }[]>
+  > {
+    const users = await this.usersRepository.findActiveCatalog();
+
+    return new SuccessResponseDto(
+      true,
+      'Usuarios obtenidos exitosamente!',
+      users.map(({ id, username }) => ({ id, username })),
     );
   }
 
@@ -134,9 +144,7 @@ export class UsersService {
       await this.logsService.log(currentUser || null, {
         module: LogModule.USERS,
         action: LogAction.UPDATE,
-        entityUuid: updatedUser.uuid,
-        entityName: updatedUser.username,
-        description: `Usuario actualizado: ${updatedUser.username}`,
+        description: `Usuario actualizado: ${updatedUser.username}. UUID: ${updatedUser.uuid}`,
         oldData,
         newData: {
           ...userDataToUpdate,
@@ -174,9 +182,7 @@ export class UsersService {
     await this.logsService.log(currentUser || null, {
       module: LogModule.USERS,
       action: LogAction.DELETE,
-      entityUuid: user.uuid,
-      entityName: user.username,
-      description: `Usuario eliminado: ${user.username}`,
+      description: `Usuario eliminado: ${user.username}. UUID: ${user.uuid}`,
       oldData: { username: user.username, email: user.email },
     });
 

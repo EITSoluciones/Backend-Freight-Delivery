@@ -7,31 +7,22 @@ import {
 } from 'typeorm';
 
 @Entity('system_logs')
-// Eliminamos índices individuales innecesarios si ya están en el compuesto
-@Index(['userUuid'])
 @Index(['createdAt'])
-@Index(['userUuid', 'module', 'action'])
+@Index(['userId'])
+@Index(['moduleId'])
+@Index(['userId', 'moduleId', 'action'])
 export class SystemLog {
   @PrimaryGeneratedColumn('increment')
   id!: number;
 
-  @Column({ type: 'varchar', length: 36, nullable: true })
-  userUuid?: string | null;
+  @Column({ type: 'int', name: 'user_id', nullable: true })
+  userId?: number | null;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  userUsername?: string | null;
-
-  @Column({ type: 'varchar', length: 100 })
-  module!: string;
+  @Column({ type: 'int', name: 'module_id', nullable: true })
+  moduleId?: number | null;
 
   @Column({ type: 'varchar', length: 50 })
   action!: string;
-
-  @Column({ type: 'varchar', length: 36, nullable: true })
-  entityUuid?: string | null;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  entityName?: string | null;
 
   @Column({ type: 'text', nullable: true })
   description?: string | null;

@@ -20,20 +20,18 @@ export class LogsRepository {
     const {
       limit = 10,
       page = 1,
-      module,
       action,
-      user_uuid,
-      entity_uuid,
+      user_id,
+      module_id,
       start_date,
       end_date,
     } = queryLogDto;
 
     return this.repository.findAndCount({
       where: {
-        ...(module && { module }),
         ...(action && { action }),
-        ...(user_uuid && { userUuid: user_uuid }),
-        ...(entity_uuid && { entityUuid: entity_uuid }),
+        ...(user_id && { userId: user_id }),
+        ...(module_id && { moduleId: module_id }),
         ...(start_date &&
           end_date && {
             createdAt: Between(new Date(start_date), new Date(end_date)),
@@ -53,21 +51,14 @@ export class LogsRepository {
     });
   }
 
-  findByEntityUuid(entityUuid: string): Promise<SystemLog[]> {
-    return this.repository.find({
-      where: { entityUuid },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  findByUserUuid(
-    userUuid: string,
+  findByUserId(
+    userId: number,
     paginationDto?: PaginationDto,
   ): Promise<[SystemLog[], number]> {
     const { limit = 10, page = 1 } = paginationDto || {};
 
     return this.repository.findAndCount({
-      where: { userUuid },
+      where: { userId },
       take: limit,
       skip: (page - 1) * limit,
       order: { createdAt: 'DESC' },

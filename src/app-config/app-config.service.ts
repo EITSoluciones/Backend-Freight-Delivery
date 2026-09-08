@@ -262,9 +262,7 @@ export class AppConfigService {
         await this.logsService.log(currentUser || null, {
           module: LogModule.APP_CONFIG,
           action: LogAction.UPDATE,
-          entityUuid: savedConfig.uuid,
-          entityName: savedConfig.key,
-          description: `Configuración actualizada: ${savedConfig.key}`,
+          description: `Configuración actualizada: ${savedConfig.key}. UUID: ${savedConfig.uuid}`,
           oldData: oldDataByUuid.get(savedConfig.uuid),
           newData: {
             ...this.toLoggableConfig(savedConfig),

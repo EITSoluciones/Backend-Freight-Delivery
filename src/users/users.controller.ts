@@ -49,6 +49,12 @@ export class UsersController {
     return this.usersService.findAll(paginationDto);
   }
 
+  @Get('catalog')
+  @Auth()
+  getUsersCatalog() {
+    return this.usersService.getUsersCatalog();
+  }
+
   @Get(':uuid')
   @Auth(Permissions.UsersView)
   findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
