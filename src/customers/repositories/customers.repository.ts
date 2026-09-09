@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, DeepPartial, In, Repository } from 'typeorm';
+import { DataSource, DeepPartial, In, IsNull, Repository } from 'typeorm';
+import { Address } from 'src/addresses/entities/address.entity';
 import { Customer } from '../entities/customer.entity';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
@@ -24,10 +25,37 @@ export class CustomersRepository {
     return this.repository.save(customer);
   }
 
-  createMany(customers: DeepPartial<Customer>[]): Promise<Customer[]> {
-    return this.dataSource.transaction((manager) =>
-      manager.save(manager.create(Customer, customers)),
-    );
+  importMany(
+    customers: DeepPartial<Customer>[],
+    addresses: DeepPartial<Address>[],
+  ): Promise<Customer[]> {
+    return this.dataSource.transaction(async (manager) => {
+      const savedCustomers = customers.length
+        ? await manager.save(manager.create(Customer, customers))
+        : [];
+      const customerIdsWithNewPrimaryAddress = [...new Set(
+        addresses
+          .filter((address) => address.is_primary && address.customer_id != null)
+          .map((address) => address.customer_id!),
+      )];
+
+      if (customerIdsWithNewPrimaryAddress.length) {
+        await manager.update(
+          Address,
+          {
+            customer_id: In(customerIdsWithNewPrimaryAddress),
+            deleted_at: IsNull(),
+          },
+          { is_primary: false },
+        );
+      }
+
+      if (addresses.length) {
+        await manager.save(manager.create(Address, addresses));
+      }
+
+      return savedCustomers;
+    });
   }
 
   softRemove(customer: Customer): Promise<Customer> {

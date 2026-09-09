@@ -76,81 +76,85 @@ export class CustomersService {
     importCustomersDto: ImportCustomersDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Customer[]>> {
-    const customersToCreate = importCustomersDto.customers.map((customer) => {
-      const {
-        street,
-        external_number,
-        internal_number,
-        neighborhood,
-        district,
-        city,
-        state,
-        country,
-        postal_code,
-        reference,
-        latitude,
-        longitude,
-        is_primary,
-        ...customerData
-      } = customer;
+    const customersByCode = new Map<string, CreateImportCustomerDto[]>();
+    for (const customer of importCustomersDto.customers) {
+      customer.code = customer.code.trim().toUpperCase();
+      if (customer.email) customer.email = customer.email.trim().toLowerCase();
+      customersByCode.set(customer.code, [
+        ...(customersByCode.get(customer.code) ?? []),
+        customer,
+      ]);
+    }
 
-      return {
-        ...customerData,
-        code: customerData.code.trim().toUpperCase(),
-        email: customerData.email.trim().toLowerCase(),
-        addresses: [{
-          street,
-          external_number,
-          internal_number,
-          neighborhood,
-          district,
-          city,
-          state,
-          country,
-          postal_code,
-          reference: reference ?? '',
-          latitude,
-          longitude,
-          is_primary,
-        }],
-      };
-    });
-    const codes = customersToCreate.map((customer) => customer.code);
+    const codes = [...customersByCode.keys()];
+    const existingCustomers = await this.customersRepository.findByCodes(codes);
+    const existingCustomersByCode = new Map(
+      existingCustomers.map((customer) => [customer.code, customer]),
+    );
+    const customersToCreate: Array<{
+      code: string;
+      name: string;
+      email: string;
+      phone?: string | null;
+      addresses: ReturnType<CustomersService['getImportAddress']>[];
+    }> = [];
+    const addressesToAdd: Array<ReturnType<CustomersService['getImportAddress']> & {
+      customer_id: number;
+    }> = [];
+
+    for (const [code, rows] of customersByCode) {
+      const addresses = rows.map((row) => this.getImportAddress(row));
+      const existingCustomer = existingCustomersByCode.get(code);
+
+      if (existingCustomer) {
+        this.ensureAtMostOnePrimaryAddress(addresses);
+        addressesToAdd.push(
+          ...addresses.map((address) => ({
+            ...address,
+            customer_id: existingCustomer.id,
+          })),
+        );
+        continue;
+      }
+
+      const customerData = rows.find((row) => row.name && row.email);
+      if (!customerData) {
+        throw new BadRequestException(
+          `El cliente con código ${code} requiere nombre y correo para crearlo.`,
+        );
+      }
+
+      const name = customerData.name?.trim();
+      const email = customerData.email?.trim().toLowerCase();
+      if (!name || !email) {
+        throw new BadRequestException(
+          `El cliente con código ${code} requiere nombre y correo para crearlo.`,
+        );
+      }
+
+      this.ensureSinglePrimaryAddress(addresses);
+      customersToCreate.push({
+        code,
+        name,
+        email,
+        phone: customerData.phone?.trim() || null,
+        addresses,
+      });
+    }
+
     const emails = customersToCreate.map((customer) => customer.email);
-    customersToCreate.forEach((customer) =>
-      this.ensureSinglePrimaryAddress(customer.addresses),
-    );
-    const duplicatedCodes = codes.filter(
-      (code, index) => codes.indexOf(code) !== index,
-    );
     const duplicatedEmails = emails.filter(
       (email, index) => emails.indexOf(email) !== index,
     );
-
-    if (duplicatedCodes.length) {
-      throw new BadRequestException(
-        `Hay códigos de cliente duplicados en la carga: ${[...new Set(duplicatedCodes)].join(', ')}.`,
-      );
-    }
-
     if (duplicatedEmails.length) {
       throw new BadRequestException(
         `Hay correos de cliente duplicados en la carga: ${[...new Set(duplicatedEmails)].join(', ')}.`,
       );
     }
 
-    const [existingCustomersByCode, existingCustomersByEmail] =
-      await Promise.all([
-        this.customersRepository.findByCodes(codes),
-        this.customersRepository.findByEmails(emails),
-      ]);
-
-    if (existingCustomersByCode.length) {
-      throw new BadRequestException(
-        `Ya existen clientes con los códigos: ${existingCustomersByCode.map((customer) => customer.code).join(', ')}.`,
-      );
-    }
-
+    const existingCustomersByEmail = await this.customersRepository.findByEmails(
+      emails,
+    );
     if (existingCustomersByEmail.length) {
       throw new BadRequestException(
         `Ya existen clientes con los correos: ${existingCustomersByEmail.map((customer) => customer.email).join(', ')}.`,
@@ -158,21 +162,27 @@ export class CustomersService {
     }
 
     try {
-      const savedCustomers = await this.customersRepository.createMany(
+      const savedCustomers = await this.customersRepository.importMany(
         customersToCreate,
+        addressesToAdd,
       );
+      const affectedCustomers = [...savedCustomers, ...existingCustomers];
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.CUSTOMERS,
         action: LogAction.CREATE,
-        description: `Carga masiva de clientes: ${savedCustomers.length} registros creados.`,
-        newData: { count: savedCustomers.length, codes },
+        description: `Carga masiva de clientes: ${savedCustomers.length} clientes creados y ${addressesToAdd.length} direcciones agregadas.`,
+        newData: {
+          created_customers: savedCustomers.length,
+          added_addresses: addressesToAdd.length,
+          codes,
+        },
       });
 
       return new SuccessResponseDto(
         true,
-        'Clientes cargados exitosamente!',
-        savedCustomers,
+        'Clientes y direcciones cargados exitosamente!',
+        affectedCustomers,
       );
     } catch (error) {
       this.dbErrorHandler.handleDBErrors(error);
@@ -205,6 +215,22 @@ export class CustomersService {
             latitude: 19.427,
             longitude: -99.1677,
             is_primary: true,
+          },
+          {
+            code: 'CLI-001',
+            street: 'Avenida Insurgentes',
+            external_number: '456',
+            internal_number: '3',
+            neighborhood: 'Roma Norte',
+            district: 'Cuauhtémoc',
+            city: 'Ciudad de México',
+            state: 'Ciudad de México',
+            country: 'México',
+            postal_code: '06700',
+            reference: 'Entrada por estacionamiento',
+            latitude: 19.417,
+            longitude: -99.162,
+            is_primary: false,
           },
         ],
       },
@@ -372,6 +398,32 @@ export class CustomersService {
     if (primaryAddresses === 0 && addresses.length > 0) {
       addresses[0].is_primary = true;
     }
+  }
+
+  private ensureAtMostOnePrimaryAddress(
+    addresses: Array<{ is_primary?: boolean }>,
+  ) {
+    if (addresses.filter((address) => address.is_primary).length > 1) {
+      throw new BadRequestException('Only one primary address is allowed.');
+    }
+  }
+
+  private getImportAddress(customer: CreateImportCustomerDto) {
+    return {
+      street: customer.street,
+      external_number: customer.external_number,
+      internal_number: customer.internal_number,
+      neighborhood: customer.neighborhood,
+      district: customer.district,
+      city: customer.city,
+      state: customer.state,
+      country: customer.country,
+      postal_code: customer.postal_code,
+      reference: customer.reference ?? '',
+      latitude: customer.latitude,
+      longitude: customer.longitude,
+      is_primary: customer.is_primary ?? false,
+    };
   }
 
   private getCustomerAuditData(customer: Customer) {
