@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { ImportCustomersDto } from './dto/import-customers.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { CreateAddressDto } from 'src/addresses/dto/create-address.dto';
@@ -39,6 +40,21 @@ export class CustomersController {
     @GetUser() currentUser: User,
   ) {
     return this.customersService.create(createCustomerDto, currentUser);
+  }
+
+  @Post('import')
+  @Auth(Permissions.CustomersCreate)
+  import(
+    @Body() importCustomersDto: ImportCustomersDto,
+    @GetUser() currentUser: User,
+  ) {
+    return this.customersService.import(importCustomersDto, currentUser);
+  }
+
+  @Get('import-template')
+  @Auth(Permissions.CustomersCreate)
+  getImportTemplate() {
+    return this.customersService.getImportTemplate();
   }
 
   @Get()
