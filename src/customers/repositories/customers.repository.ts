@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, In, Repository } from 'typeorm';
+import { DataSource, DeepPartial, In, Repository } from 'typeorm';
 import { Customer } from '../entities/customer.entity';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
@@ -9,6 +9,7 @@ export class CustomersRepository {
   constructor(
     @InjectRepository(Customer)
     private readonly repository: Repository<Customer>,
+    private readonly dataSource: DataSource,
   ) {}
 
   create(customer: DeepPartial<Customer>): Customer {
@@ -21,6 +22,12 @@ export class CustomersRepository {
 
   save(customer: Customer): Promise<Customer> {
     return this.repository.save(customer);
+  }
+
+  createMany(customers: DeepPartial<Customer>[]): Promise<Customer[]> {
+    return this.dataSource.transaction((manager) =>
+      manager.save(manager.create(Customer, customers)),
+    );
   }
 
   softRemove(customer: Customer): Promise<Customer> {
@@ -71,6 +78,10 @@ export class CustomersRepository {
 
   findByCodes(codes: string[]): Promise<Customer[]> {
     return this.repository.find({ where: { code: In(codes) } });
+  }
+
+  findByEmails(emails: string[]): Promise<Customer[]> {
+    return this.repository.find({ where: { email: In(emails) } });
   }
 
   findActive() {

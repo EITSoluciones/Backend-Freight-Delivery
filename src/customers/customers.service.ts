@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
+import { CreateImportCustomerDto } from './dto/create-import-customer.dto';
+import { ImportCustomersDto } from './dto/import-customers.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { Address } from 'src/addresses/entities/address.entity';
 import {
@@ -68,6 +70,145 @@ export class CustomersService {
     } catch (error) {
       this.dbErrorHandler.handleDBErrors(error);
     }
+  }
+
+  async import(
+    importCustomersDto: ImportCustomersDto,
+    currentUser?: User,
+  ): Promise<SuccessResponseDto<Customer[]>> {
+    const customersToCreate = importCustomersDto.customers.map((customer) => {
+      const {
+        street,
+        external_number,
+        internal_number,
+        neighborhood,
+        district,
+        city,
+        state,
+        country,
+        postal_code,
+        reference,
+        latitude,
+        longitude,
+        is_primary,
+        ...customerData
+      } = customer;
+
+      return {
+        ...customerData,
+        code: customerData.code.trim().toUpperCase(),
+        email: customerData.email.trim().toLowerCase(),
+        addresses: [{
+          street,
+          external_number,
+          internal_number,
+          neighborhood,
+          district,
+          city,
+          state,
+          country,
+          postal_code,
+          reference: reference ?? '',
+          latitude,
+          longitude,
+          is_primary,
+        }],
+      };
+    });
+    const codes = customersToCreate.map((customer) => customer.code);
+    const emails = customersToCreate.map((customer) => customer.email);
+    customersToCreate.forEach((customer) =>
+      this.ensureSinglePrimaryAddress(customer.addresses),
+    );
+    const duplicatedCodes = codes.filter(
+      (code, index) => codes.indexOf(code) !== index,
+    );
+    const duplicatedEmails = emails.filter(
+      (email, index) => emails.indexOf(email) !== index,
+    );
+
+    if (duplicatedCodes.length) {
+      throw new BadRequestException(
+        `Hay códigos de cliente duplicados en la carga: ${[...new Set(duplicatedCodes)].join(', ')}.`,
+      );
+    }
+
+    if (duplicatedEmails.length) {
+      throw new BadRequestException(
+        `Hay correos de cliente duplicados en la carga: ${[...new Set(duplicatedEmails)].join(', ')}.`,
+      );
+    }
+
+    const [existingCustomersByCode, existingCustomersByEmail] =
+      await Promise.all([
+        this.customersRepository.findByCodes(codes),
+        this.customersRepository.findByEmails(emails),
+      ]);
+
+    if (existingCustomersByCode.length) {
+      throw new BadRequestException(
+        `Ya existen clientes con los códigos: ${existingCustomersByCode.map((customer) => customer.code).join(', ')}.`,
+      );
+    }
+
+    if (existingCustomersByEmail.length) {
+      throw new BadRequestException(
+        `Ya existen clientes con los correos: ${existingCustomersByEmail.map((customer) => customer.email).join(', ')}.`,
+      );
+    }
+
+    try {
+      const savedCustomers = await this.customersRepository.createMany(
+        customersToCreate,
+      );
+
+      await this.logsService.log(currentUser || null, {
+        module: LogModule.CUSTOMERS,
+        action: LogAction.CREATE,
+        description: `Carga masiva de clientes: ${savedCustomers.length} registros creados.`,
+        newData: { count: savedCustomers.length, codes },
+      });
+
+      return new SuccessResponseDto(
+        true,
+        'Clientes cargados exitosamente!',
+        savedCustomers,
+      );
+    } catch (error) {
+      this.dbErrorHandler.handleDBErrors(error);
+    }
+  }
+
+  getImportTemplate(): SuccessResponseDto<{
+    customers: CreateImportCustomerDto[];
+  }> {
+    return new SuccessResponseDto(
+      true,
+      'Plantilla de clientes obtenida exitosamente!',
+      {
+        customers: [
+          {
+            code: 'CLI-001',
+            name: 'Cliente Ejemplo',
+            email: 'contacto@example.com',
+            phone: '5551234567',
+            street: 'Avenida Reforma',
+            external_number: '123',
+            internal_number: '12',
+            neighborhood: 'Juárez',
+            district: 'Cuauhtémoc',
+            city: 'Ciudad de México',
+            state: 'Ciudad de México',
+            country: 'México',
+            postal_code: '06600',
+            reference: 'Acceso principal',
+            latitude: 19.427,
+            longitude: -99.1677,
+            is_primary: true,
+          },
+        ],
+      },
+    );
   }
 
   async findAll(
