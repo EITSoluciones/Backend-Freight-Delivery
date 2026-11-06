@@ -28,7 +28,7 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 import { SendDeliveryDriverInvitationDto } from './dto/send-delivery-driver-invitation.dto';
 import { LicenseValidationService } from 'src/auth/services/license-validation.service';
 
-const DEFAULT_DELIVERY_ROLE_CODE = 'DELIVERY';
+const DEFAULT_DELIVERY_ROLE_CODE = 'DELIVERY_DRIVER';
 const DEFAULT_DELIVERY_INVITATION_NOTIFICATION_CODE = 'DELIVERY_DRIVER_INVITATION';
 @Injectable()
 export class DeliveryDriversService {
