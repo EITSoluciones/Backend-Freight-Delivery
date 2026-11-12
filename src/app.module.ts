@@ -11,7 +11,7 @@ import { UsersModule } from './users/users.module';
 import { CustomersModule } from './customers/customers.module';
 import { AddressesModule } from './addresses/addresses.module';
 import { ModuleCategoriesModule } from './module-categories/module-categories.module';
-import { ModulesModule } from './modules/modules.module';
+
 import { CommonModule } from './common/common.module';
 import { DeliveryDriversModule } from './delivery-drivers/delivery-drivers.module';
 import { DeliveryVehiclesModule } from './delivery-vehicles/delivery-vehicles.module';
@@ -52,7 +52,6 @@ import { OrdersModule } from './orders/orders.module';
     CustomersModule,
     AddressesModule,
     ModuleCategoriesModule,
-    ModulesModule,
     DeliveryDriversModule,
     DeliveryVehiclesModule,
     LogsModule,

@@ -12,6 +12,13 @@ export async function seedRoles(dataSource: DataSource) {
       description: 'Acceso total al sistema',
       is_active: true,
     },
+    {
+      uuid: '9c6c0a80-4d2a-4d76-b8ea-111111111112',
+      code: 'DELIVERY_DRIVER',
+      name: 'Chofer / Repartidor',
+      description: 'Acceso a las funcionalidades de repartidor',
+      is_active: true,
+    },
   ];
 
   for (const item of roles) {

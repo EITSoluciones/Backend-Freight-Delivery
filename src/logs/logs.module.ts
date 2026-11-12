@@ -4,7 +4,7 @@ import { LogsService } from './logs.service';
 import { LogsController } from './logs.controller';
 import { SystemLog } from './entities/system-log.entity';
 import { LogsRepository } from './repositories/logs.repository';
-import { Module as ModuleEntity } from '../modules/entities/module.entity';
+import { Module as ModuleEntity } from '../module-categories/entities/module.entity';
 
 @Module({
   controllers: [LogsController],

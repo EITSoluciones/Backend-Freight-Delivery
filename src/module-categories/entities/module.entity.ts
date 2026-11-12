@@ -23,6 +23,9 @@ export class Module {
   @Column({ type: 'uuid', unique: true })
   uuid!: string;
 
+  @Column({ type: 'int', nullable: true })
+  sort_order?: number | null;
+
   @Column({ type: 'varchar', length: 100, nullable: true, unique: true })
   code?: string | null;
 

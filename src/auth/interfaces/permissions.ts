@@ -8,23 +8,19 @@ export enum Permissions {
   UsersUpdate = 'users:update',
   UsersDelete = 'users:delete',
 
-  //Categorías de Módulos
+  //Categorías de Módulos → unificado bajo Modules*
   ModuleCategoriesView = 'modulecategories:view',
   ModuleCategoriesCreate = 'modulecategories:create',
   ModuleCategoriesUpdate = 'modulecategories:update',
   ModuleCategoriesDelete = 'modulecategories:delete',
 
-  //Módulos
-  ModulesView = 'modules:view',
-  ModulesCreate = 'modules:create',
-  ModulesUpdate = 'modules:update',
-  ModulesDelete = 'modules:delete',
 
   //Roles
   RolesView = 'roles:view',
   RolesCreate = 'roles:create',
   RolesUpdate = 'roles:update',
   RolesDelete = 'roles:delete',
+  RolesAssignPermissions = 'roles:assign-permissions',
 
   //Bitácora
   LogsView = 'logs:view',
