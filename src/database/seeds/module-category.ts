@@ -9,12 +9,14 @@ export async function seedModuleCategories(dataSource: DataSource) {
       uuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
       name: 'Administración',
       description: 'Módulos administrativos del sistema',
+      sort_order: 1,
       is_active: true,
     },
     {
       uuid: '27904da2-8704-4455-9bda-9bf90714fc44',
       name: 'Datos Maestros',
       description: 'Catálogos y configuraciones base',
+      sort_order: 2,
       is_active: true,
     },
   ];

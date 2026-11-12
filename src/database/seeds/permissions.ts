@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { Permission } from 'src/roles/entities/permission.entity';
-import { Module } from 'src/modules/entities/module.entity';
+import { Module } from 'src/module-categories/entities/module.entity';
 import { Permissions } from 'src/auth/interfaces/permissions'; // <-- ajusta esta ruta
 
 type PermissionSeed = {
@@ -64,72 +64,38 @@ export async function seedPermissions(dataSource: DataSource) {
       moduleUrl: '/users',
     },
 
-    // Categorías de módulos
-    {
-      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000014',
-      code: Permissions.ModuleCategoriesView,
-      name: 'Visualizar Categorías de Módulos',
-      description: 'Permite visualizar categorías de módulos',
-      is_active: true,
-      moduleUrl: '/module-categories',
-    },
-    {
-      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000015',
-      code: Permissions.ModuleCategoriesCreate,
-      name: 'Crear Categorías de Módulos',
-      description: 'Permite crear categorías de módulos',
-      is_active: true,
-      moduleUrl: '/module-categories',
-    },
-    {
-      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000016',
-      code: Permissions.ModuleCategoriesUpdate,
-      name: 'Actualizar Categorías de Módulos',
-      description: 'Permite actualizar categorías de módulos',
-      is_active: true,
-      moduleUrl: '/module-categories',
-    },
-    {
-      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000017',
-      code: Permissions.ModuleCategoriesDelete,
-      name: 'Eliminar Categorías de Módulos',
-      description: 'Permite eliminar categorías de módulos',
-      is_active: true,
-      moduleUrl: '/module-categories',
-    },
-
-    // Módulos
+    // Módulos (unificado: categorías + módulos en /module-categories)
     {
       uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000018',
-      code: Permissions.ModulesView,
+      code: Permissions.ModuleCategoriesView,
       name: 'Visualizar Módulos',
-      description: 'Permite visualizar módulos',
+      description: 'Permite visualizar módulos y categorías de módulos',
       is_active: true,
-      moduleUrl: '/modules',
+      moduleUrl: '/module-categories',
     },
     {
       uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000019',
-      code: Permissions.ModulesCreate,
+      code: Permissions.ModuleCategoriesCreate,
       name: 'Crear Módulos',
-      description: 'Permite crear módulos',
+      description: 'Permite crear módulos y categorías de módulos',
       is_active: true,
-      moduleUrl: '/modules',
+      moduleUrl: '/module-categories',
     },
     {
       uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000020',
-      code: Permissions.ModulesUpdate,
+      code: Permissions.ModuleCategoriesUpdate,
       name: 'Actualizar Módulos',
-      description: 'Permite actualizar módulos',
+      description: 'Permite actualizar módulos y categorías de módulos',
       is_active: true,
-      moduleUrl: '/modules',
+      moduleUrl: '/module-categories',
     },
     {
       uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000021',
-      code: Permissions.ModulesDelete,
+      code: Permissions.ModuleCategoriesDelete,
       name: 'Eliminar Módulos',
-      description: 'Permite eliminar módulos',
+      description: 'Permite eliminar módulos y categorías de  módulos',
       is_active: true,
-      moduleUrl: '/modules',
+      moduleUrl: '/module-categories',
     },
 
     // Roles
@@ -162,6 +128,14 @@ export async function seedPermissions(dataSource: DataSource) {
       code: Permissions.RolesDelete,
       name: 'Eliminar Roles',
       description: 'Permite eliminar roles',
+      is_active: true,
+      moduleUrl: '/roles',
+    },   
+     {
+      uuid: '67db0caa-9dd8-4e8d-b8b2-2f8d90000010',
+      code: Permissions.RolesAssignPermissions,
+      name: 'Asignar Permisos a Roles',
+      description: 'Permite asignar permisos a roles',
       is_active: true,
       moduleUrl: '/roles',
     },

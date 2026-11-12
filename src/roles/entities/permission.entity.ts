@@ -11,7 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Role } from './role.entity';
-import { Module } from 'src/modules/entities/module.entity';
+import { Module } from 'src/module-categories/entities/module.entity';
 import { Exclude } from 'class-transformer';
 import { v4 as uuidv4 } from 'uuid';
 

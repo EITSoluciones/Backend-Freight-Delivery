@@ -5,10 +5,12 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import { Module } from './module.entity';
 
 @Entity('module_categories')
 export class ModuleCategory {
@@ -18,6 +20,9 @@ export class ModuleCategory {
 
   @Column({ type: 'uuid', unique: true })
   uuid!: string;
+
+  @Column({ type: 'int', nullable: true })
+  sort_order?: number | null;
 
   @Column({ length: 100 })
   name!: string;
@@ -49,6 +54,9 @@ export class ModuleCategory {
     nullable: true,
   })
   deleted_at?: Date | null;
+
+  @OneToMany(() => Module, (module) => module.module_category)
+  modules!: Module[];
 
   @BeforeInsert()
   generateUuid() {

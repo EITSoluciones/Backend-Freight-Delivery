@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsBooleanString, IsOptional, IsPositive, Min } from 'class-validator';
+import { IsBooleanString, IsOptional, IsPositive, IsString, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PaginationDto {
@@ -20,4 +20,8 @@ export class PaginationDto {
   @IsOptional()
   @IsBooleanString()
   is_active?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 }
