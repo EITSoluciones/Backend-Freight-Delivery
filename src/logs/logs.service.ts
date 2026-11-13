@@ -8,7 +8,7 @@ import { PaginatedResponse } from '../common/dto/success-response.dto';
 import { LogData } from './interfaces/log-data.interface';
 import { User } from '../users/entities/user.entity';
 import { LogsRepository } from './repositories/logs.repository';
-import { Module as ModuleEntity } from '../modules/entities/module.entity';
+import { Module as ModuleEntity } from '../module-categories/entities/module.entity';
 
 interface LogPayload {
   user: Pick<User, 'id' | 'platforms'> | null;

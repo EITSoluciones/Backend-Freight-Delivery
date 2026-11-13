@@ -16,8 +16,10 @@ import { CreateModuleCategoryDto } from './dto/create-module-category.dto';
 import { UpdateModuleCategoryDto } from './dto/update-module-category.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { Auth } from 'src/auth/decorators';
+import { Auth, GetUser } from 'src/auth/decorators';
 import { Permissions } from 'src/auth/interfaces';
+import { SortModuleCategoriesDto } from './dto/sort-categories.dto';
+import { User } from 'src/users/entities/user.entity';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller({
@@ -39,8 +41,11 @@ export class ModuleCategoriesController {
   /** Crear Categoría */
   @Post()
   @Auth(Permissions.ModuleCategoriesCreate)
-  create(@Body() createModuleCategoryDto: CreateModuleCategoryDto) {
-    return this.moduleCategoriesService.create(createModuleCategoryDto);
+  create(
+    @Body() createModuleCategoryDto: CreateModuleCategoryDto,
+    @GetUser() currentUser: User,
+  ) {
+    return this.moduleCategoriesService.create(createModuleCategoryDto, currentUser);
   }
 
   /** Obtener Categorías */
@@ -57,20 +62,34 @@ export class ModuleCategoriesController {
     return this.moduleCategoriesService.findOne(uuid);
   }
 
+  /** Ordenar Categorías */
+  @Patch('sort')
+  @Auth(Permissions.ModuleCategoriesUpdate)
+  sortCategories(
+    @Body() dto: SortModuleCategoriesDto,
+    @GetUser() currentUser: User,
+  ) {
+    return this.moduleCategoriesService.sortCategories(dto.ordered_uuids, currentUser);
+  }
+
   /** Actualizar Categoría */
   @Patch(':uuid')
   @Auth(Permissions.ModuleCategoriesUpdate)
   update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateModuleCategoryDto: UpdateModuleCategoryDto,
+    @GetUser() currentUser: User,
   ) {
-    return this.moduleCategoriesService.update(uuid, updateModuleCategoryDto);
+    return this.moduleCategoriesService.update(uuid, updateModuleCategoryDto, currentUser);
   }
 
   /** Eliminar Categoría */
   @Delete(':uuid')
   @Auth(Permissions.ModuleCategoriesDelete)
-  remove(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.moduleCategoriesService.remove(uuid);
+  remove(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @GetUser() currentUser: User,
+  ) {
+    return this.moduleCategoriesService.remove(uuid, currentUser);
   }
 }

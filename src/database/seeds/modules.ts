@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { Module } from 'src/modules/entities/module.entity';
+import { Module } from 'src/module-categories/entities/module.entity';
 import { ModuleCategory } from 'src/module-categories/entities/module-category.entity';
 
 type ModuleSeed = {
@@ -10,6 +10,7 @@ type ModuleSeed = {
   icon: string;
   url: string;
   is_active: boolean;
+  sort_order: number;
   categoryUuid: string;
 };
 
@@ -26,6 +27,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-home',
       url: '/dashboard',
       is_active: true,
+      sort_order: 1,
       categoryUuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
     },
     {
@@ -36,6 +38,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-users',
       url: '/users',
       is_active: true,
+      sort_order: 2,
       categoryUuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
     },
     {
@@ -46,36 +49,18 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-shield',
       url: '/roles',
       is_active: true,
-      categoryUuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
-    },
-    {
-      uuid: '5ab7ed60-cd3d-4af0-b0b1-4dcab91a1004',
-      code: 'permissions',
-      name: 'Permisos',
-      description: 'Administración de permisos',
-      icon: 'pi pi-key',
-      url: '/permissions',
-      is_active: true,
+      sort_order: 3,
       categoryUuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
     },
     {
       uuid: 'c135ee28-e0fb-4b9e-9721-17b572a5f0ac',
       code: 'module_categories',
-      name: 'Categorías de módulos',
-      description: 'Administración de categorías de módulos',
+      name: 'Categorías y módulos', 
+      description: 'Administración de categorías y módulos',
       icon: 'pi pi-folder-open',
       url: '/module-categories',
       is_active: true,
-      categoryUuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
-    },
-    {
-      uuid: '5ab7ed60-cd3d-4af0-b0b1-4dcab91a1006',
-      code: 'modules',
-      name: 'Módulos',
-      description: 'Administración de módulos',
-      icon: 'pi pi-sitemap',
-      url: '/modules',
-      is_active: true,
+      sort_order: 5,
       categoryUuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
     },
     {
@@ -86,6 +71,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-history',
       url: '/logs',
       is_active: true,
+      sort_order: 6,
       categoryUuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
     },
     {
@@ -96,6 +82,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-users',
       url: '/customers',
       is_active: true,
+      sort_order: 1,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
     {
@@ -106,6 +93,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-wrench',
       url: '/test',
       is_active: true,
+      sort_order: 2,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
     {
@@ -116,6 +104,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-mobile',
       url: '/platforms',
       is_active: true,
+      sort_order: 3,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
     {
@@ -126,6 +115,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-box',
       url: '/products',
       is_active: true,
+      sort_order: 4,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
     {
@@ -136,6 +126,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-truck',
       url: '/delivery-drivers',
       is_active: true,
+      sort_order: 5,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
     {
@@ -146,6 +137,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-building',
       url: '/companies',
       is_active: true,
+      sort_order: 6,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
     {
@@ -156,6 +148,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-map-marker',
       url: '/addresses',
       is_active: true,
+      sort_order: 7,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
     {
@@ -166,6 +159,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-cog',
       url: '/app-config',
       is_active: true,
+      sort_order: 7,
       categoryUuid: 'f1dc0801-b5c1-4616-bf52-7242dd34cf1f',
     },
     {
@@ -176,6 +170,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-car',
       url: '/delivery-vehicles',
       is_active: true,
+      sort_order: 8,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
     {
@@ -186,6 +181,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-building',
       url: '/centers',
       is_active: true,
+      sort_order: 9,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
     {
@@ -196,6 +192,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: 'pi pi-shopping-cart',
       url: '/orders',
       is_active: true,
+      sort_order: 10,
       categoryUuid: '27904da2-8704-4455-9bda-9bf90714fc44',
     },
   ];
@@ -215,6 +212,7 @@ export async function seedModules(dataSource: DataSource) {
       icon: item.icon,
       url: item.url,
       is_active: item.is_active,
+      sort_order: item.sort_order,
       module_category_id: category.id,
     };
 

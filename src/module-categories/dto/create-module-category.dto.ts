@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateModuleCategoryDto {
   @IsNotEmpty({ message: 'El nombre es obligatorio.' })
@@ -8,4 +8,8 @@ export class CreateModuleCategoryDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsInt()
+  sort_order?: number;
 }

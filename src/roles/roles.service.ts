@@ -156,34 +156,37 @@ export class RolesService {
   }
 
   /** Obtener Módulos autorizados de Roles */
+
   async getAuthorizedModulesByRole(
     userRoles: Role[],
   ): Promise<SuccessResponseDto<any[]>> {
     const categoryMap = new Map<string, any>();
 
     userRoles.forEach((role) => {
-      role.permissions.forEach((permission) => {
+      role.permissions?.forEach((permission) => {
         const module = permission.module;
+
         if (
           !permission.code.endsWith(':view') ||
           !module ||
-          !module.is_active
+          !module.is_active ||
+          !module.module_category
         ) {
           return;
         }
 
         const category = module.module_category;
-        const categoryKey = category.uuid;
 
-        if (!categoryMap.has(categoryKey)) {
-          categoryMap.set(categoryKey, {
+        if (!categoryMap.has(category.uuid)) {
+          categoryMap.set(category.uuid, {
             group: category.name || 'General',
             active: category.is_active,
+            sort_order: category.sort_order,
             items: new Map<string, any>(),
           });
         }
 
-        const categoryEntry = categoryMap.get(categoryKey);
+        const categoryEntry = categoryMap.get(category.uuid);
 
         if (!categoryEntry.items.has(module.uuid)) {
           categoryEntry.items.set(module.uuid, {
@@ -192,16 +195,29 @@ export class RolesService {
             description: module.description,
             route: module.url,
             active: module.is_active,
+            sort_order: module.sort_order,
           });
         }
       });
     });
 
-    const authModules = Array.from(categoryMap.values()).map((category) => ({
-      group: category.group,
-      active: category.active,
-      items: Array.from(category.items.values()),
-    }));
+    const authModules = Array.from(categoryMap.values())
+      .sort(
+        (a, b) =>
+          (a.sort_order ?? Number.MAX_SAFE_INTEGER) -
+          (b.sort_order ?? Number.MAX_SAFE_INTEGER),
+      )
+      .map((category) => ({
+        group: category.group,
+        active: category.active,
+        items: Array.from(category.items.values())
+          .sort(
+            (a: any, b: any) =>
+              (a.sort_order ?? Number.MAX_SAFE_INTEGER) -
+              (b.sort_order ?? Number.MAX_SAFE_INTEGER),
+          )
+          .map(({ sort_order, ...module }: any) => module),
+      }));
 
     return new SuccessResponseDto(
       true,

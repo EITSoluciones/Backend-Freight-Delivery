@@ -19,7 +19,7 @@ import { Auth, GetUser } from 'src/auth/decorators';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { User } from '../users/entities/user.entity';
 import { UpdateRolePermissionsDto } from './dto/update-role-permissions.dto';
-
+import {Permissions} from 'src/auth/interfaces';
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller({
   path: 'roles',
@@ -44,7 +44,7 @@ export class RolesController {
 
   /** Actualizar Permisos al Rol */
   @Put(':uuid/permissions')
-  @Auth()
+  @Auth(Permissions.RolesAssignPermissions)
   updatePermissionsByRole(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateRolePermissionsDto: UpdateRolePermissionsDto,
@@ -73,28 +73,28 @@ export class RolesController {
 
   /** Crear Rol */
   @Post()
-  @Auth()
+  @Auth(Permissions.RolesCreate)
   create(@Body() CreateRoleDto: CreateRoleDto, @GetUser() currentUser: User) {
     return this.rolesService.create(CreateRoleDto, currentUser);
   }
 
   /** Obtener Roles */
   @Get()
-  @Auth()
+  @Auth(Permissions.RolesView)
   findAll(@Query() paginationDto: PaginationDto) {
     return this.rolesService.findAll(paginationDto);
   }
 
   /** Obtener Rol */
   @Get(':uuid')
-  @Auth()
+  @Auth(Permissions.RolesView)
   findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return this.rolesService.findOne(uuid);
   }
 
   /** Actualizar Rol */
   @Patch(':uuid')
-  @Auth()
+  @Auth(Permissions.RolesUpdate)
   update(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateRoleDto: UpdateRoleDto,
@@ -105,7 +105,7 @@ export class RolesController {
 
   /** Eliminar Rol */
   @Delete(':uuid')
-  @Auth()
+  @Auth(Permissions.RolesDelete)
   remove(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @GetUser() currentUser: User,

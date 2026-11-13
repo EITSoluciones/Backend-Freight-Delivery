@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateModuleDto {
   @IsNotEmpty()
@@ -20,4 +20,8 @@ export class CreateModuleDto {
   @IsNotEmpty()
   @IsString()
   url!: string;
+
+  @IsOptional()
+  @IsInt()
+  sort_order?: number;
 }

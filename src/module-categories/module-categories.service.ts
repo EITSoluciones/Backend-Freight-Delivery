@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ModuleCategory } from './entities/module-category.entity';
 import { CreateModuleCategoryDto } from './dto/create-module-category.dto';
 import { UpdateModuleCategoryDto } from './dto/update-module-category.dto';
@@ -9,16 +9,24 @@ import {
   SuccessResponseDto,
 } from 'src/common/dto/success-response.dto';
 import { ModuleCategoriesRepository } from './repositories/module-categories.repository';
+import { ModulesRepository } from './repositories/modules.repository';
+import { LogsService } from 'src/logs/logs.service';
+import { LogAction } from 'src/logs/enums/log-action.enum';
+import { LogModule } from 'src/logs/enums/log-module.enum';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class ModuleCategoriesService {
   constructor(
     private readonly moduleCategoriesRepository: ModuleCategoriesRepository,
+    private readonly modulesRepository: ModulesRepository,
     private readonly dbErrorHandler: DBErrorHandlerService,
+    private readonly logsService: LogsService,
   ) {}
 
   async create(
     createModuleCategoryDto: CreateModuleCategoryDto,
+    currentUser?: User,
   ): Promise<SuccessResponseDto<ModuleCategory>> {
     const moduleCategory = this.moduleCategoriesRepository.create(
       createModuleCategoryDto,
@@ -26,9 +34,16 @@ export class ModuleCategoriesService {
     const savedModuleCategory =
       await this.moduleCategoriesRepository.save(moduleCategory);
 
+    await this.logsService.log(currentUser || null, {
+      module: LogModule.MODULE_CATEGORIES,
+      action: LogAction.CREATE,
+      description: `Categoría creada: ${savedModuleCategory.name}. UUID: ${savedModuleCategory.uuid}`,
+      newData: createModuleCategoryDto,
+    });
+
     return new SuccessResponseDto(
       true,
-      'Categoría de Módulo Creada Exitosamente!',
+      'Categoría  Creada Exitosamente!',
       savedModuleCategory,
     );
   }
@@ -37,7 +52,6 @@ export class ModuleCategoriesService {
     paginationDto: PaginationDto,
   ): Promise<PaginatedResponse<ModuleCategory>> {
     const { limit = 10, page = 1, is_active } = paginationDto;
-    const offset = (page - 1) * limit;
 
     const [moduleCategories, total] =
       await this.moduleCategoriesRepository.findAll(paginationDto);
@@ -47,7 +61,7 @@ export class ModuleCategoriesService {
       total,
       page,
       limit,
-      'Categorías de Módulos obtenidos exitosamente!',
+      'Categorías obtenidas exitosamente!',
     );
   }
 
@@ -57,13 +71,13 @@ export class ModuleCategoriesService {
 
     if (!moduleCategory) {
       throw new NotFoundException(
-        `La categoría de módulo con uuid ${uuid} no se encontró!`,
+        `La categoría con uuid ${uuid} no se encontró!`,
       );
     }
 
     return new SuccessResponseDto(
       true,
-      'Categoría de Módulo Encontrado!',
+      'Categoría Encontrada!',
       moduleCategory,
     );
   }
@@ -71,41 +85,83 @@ export class ModuleCategoriesService {
   async update(
     uuid: string,
     updateModuleCategoryDto: UpdateModuleCategoryDto,
+    currentUser?: User,
   ): Promise<SuccessResponseDto<ModuleCategory>> {
     const moduleCategoryToUpdate =
       await this.moduleCategoriesRepository.findByUuid(uuid);
 
     if (!moduleCategoryToUpdate)
       throw new NotFoundException(
-        `Categoría de Módulo con uuid: ${uuid} no encontrado`,
+        `Categoría con uuid: ${uuid} no encontrado`,
       );
 
+    const modules = await this.modulesRepository.findByCategoryOrdered(
+      moduleCategoryToUpdate.id,
+    );
+    const hasActiveModules = modules.some((module) => module.is_active);
+
+    if (updateModuleCategoryDto.is_active === false && hasActiveModules) {
+      throw new BadRequestException(
+        `No se puede desactivar la categoría ${moduleCategoryToUpdate.name} porque tiene módulos activos`,
+      );
+    }
+
+    const oldData = { ...moduleCategoryToUpdate };
     Object.assign(moduleCategoryToUpdate, updateModuleCategoryDto);
     const updatedModuleCategory = await this.moduleCategoriesRepository.save(
       moduleCategoryToUpdate,
     );
 
+    await this.logsService.log(currentUser || null, {
+      module: LogModule.MODULE_CATEGORIES,
+      action: LogAction.UPDATE,
+      description: `Categoría actualizada: ${updatedModuleCategory.name}. UUID: ${updatedModuleCategory.uuid}`,
+      oldData,
+      newData: updateModuleCategoryDto,
+    });
+
     return new SuccessResponseDto(
       true,
-      'Categoría de Módulo actualizado exitosamente!',
+      'Categoría actualizada exitosamente!',
       updatedModuleCategory,
     );
   }
 
-  async remove(uuid: string): Promise<SuccessResponseDto<ModuleCategory>> {
+  async remove(
+    uuid: string,
+    currentUser?: User,
+  ): Promise<SuccessResponseDto<ModuleCategory>> {
     const moduleCategory =
       await this.moduleCategoriesRepository.findByUuid(uuid);
 
     if (!moduleCategory)
       throw new NotFoundException(
-        `La categoría de módulo con uuid ${uuid} no se encontró!`,
+        `La categoría con uuid ${uuid} no se encontró!`,
       );
+
+    const modules = await this.modulesRepository.findByCategoryOrdered(
+      moduleCategory.id,
+    );
+    const hasActiveModules = modules.some((module) => module.is_active);
+
+    if (hasActiveModules) {
+      throw new BadRequestException(
+        `No se puede eliminar la categoría ${moduleCategory.name} porque tiene módulos activos`,
+      );
+    }
 
     await this.moduleCategoriesRepository.softDeleteByUuid(uuid);
 
+    await this.logsService.log(currentUser || null, {
+      module: LogModule.MODULE_CATEGORIES,
+      action: LogAction.DELETE,
+      description: `Categoría eliminada: ${moduleCategory.name}. UUID: ${moduleCategory.uuid}`,
+      oldData: { name: moduleCategory.name, uuid: moduleCategory.uuid },
+    });
+
     return new SuccessResponseDto(
       true,
-      'Categoría de Módulo eliminada exitosamente!',
+      'Categoría eliminada exitosamente!',
       moduleCategory,
     );
   }
@@ -114,8 +170,28 @@ export class ModuleCategoriesService {
     const categories = await this.moduleCategoriesRepository.findActive();
     return new SuccessResponseDto(
       true,
-      'Categorías obtenidos exitosamente!',
+      'Categorías obtenidas exitosamente!',
       categories,
+    );
+  }
+
+  async sortCategories(
+    orderedUuids: string[],
+    currentUser?: User,
+  ): Promise<SuccessResponseDto<null>> {
+    await this.moduleCategoriesRepository.sortCategories(orderedUuids);
+
+    await this.logsService.log(currentUser || null, {
+      module: LogModule.MODULE_CATEGORIES,
+      action: LogAction.UPDATE,
+      description: `Orden de categorías actualizado`,
+      newData: { ordered_uuids: orderedUuids },
+    });
+
+    return new SuccessResponseDto(
+      true,
+      'Categorías ordenadas exitosamente!',
+      null,
     );
   }
 }
