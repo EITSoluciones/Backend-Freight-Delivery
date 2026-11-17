@@ -55,8 +55,8 @@ export async function seedModules(dataSource: DataSource) {
     {
       uuid: 'c135ee28-e0fb-4b9e-9721-17b572a5f0ac',
       code: 'module_categories',
-      name: 'Categorías y módulos', 
-      description: 'Administración de categorías y módulos',
+      name: 'Gestión de Módulos',
+      description: 'Gestión de categorías y módulos del sistema',
       icon: 'pi pi-folder-open',
       url: '/module-categories',
       is_active: true,
