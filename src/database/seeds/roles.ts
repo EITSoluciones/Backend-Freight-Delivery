@@ -13,6 +13,13 @@ export async function seedRoles(dataSource: DataSource) {
       is_active: true,
     },
     {
+      uuid: '9c6c0a80-4d2a-4d76-b8ea-111111111113',
+      code: 'ADMINISTRADOR',
+      name: 'Administrador',
+      description: 'Acceso administrativo al sistema',
+      is_active: true,
+    },
+    {
       uuid: '9c6c0a80-4d2a-4d76-b8ea-111111111112',
       code: 'DELIVERY_DRIVER',
       name: 'Chofer / Repartidor',

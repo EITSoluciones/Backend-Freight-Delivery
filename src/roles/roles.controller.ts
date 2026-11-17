@@ -60,8 +60,8 @@ export class RolesController {
   /** Obtener Catálogo de Roles */
   @Get('catalog')
   @Auth()
-  getRolesCatalog() {
-    return this.rolesService.getRolesCatalog();
+  getRolesCatalog(@GetUser() currentUser: User) {
+    return this.rolesService.getRolesCatalog(currentUser);
   }
 
   /** Obtener Catálogo de módulos autorizados en el Rol*/
@@ -81,8 +81,8 @@ export class RolesController {
   /** Obtener Roles */
   @Get()
   @Auth(Permissions.RolesView)
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.rolesService.findAll(paginationDto);
+  findAll(@Query() paginationDto: PaginationDto, @GetUser() currentUser: User) {
+    return this.rolesService.findAll(paginationDto, currentUser);
   }
 
   /** Obtener Rol */

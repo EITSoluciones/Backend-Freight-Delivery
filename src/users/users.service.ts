@@ -17,6 +17,7 @@ import { UsersRepository } from './repositories/users.repository';
 import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
 import { PlatformsRepository } from 'src/platforms/repositories/platforms.repository';
 import { RolesRepository } from 'src/roles/repositories/roles.repository';
+import { SUPER_ADMIN_ROLE_CODE } from 'src/common/constants/protected-roles.constant';
 
 @Injectable()
 export class UsersService {
@@ -68,9 +69,13 @@ export class UsersService {
   /** Obtener Usuarios */
   async findAll(
     paginationDto: PaginationDto,
+    currentUser: User,
   ): Promise<PaginatedResponse<User>> {
     const { limit = 10, page = 1 } = paginationDto;
-    const [users, total] = await this.usersRepository.findAll(paginationDto);
+    const isSuperAdmin = currentUser.roles.some(r => r.code === SUPER_ADMIN_ROLE_CODE);
+    const excludeRoleCodes = isSuperAdmin ? [] : [SUPER_ADMIN_ROLE_CODE];
+
+    const [users, total] = await this.usersRepository.findAll(paginationDto, excludeRoleCodes);
 
     return PaginatedResponse.create(
       users,
