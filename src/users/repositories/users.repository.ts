@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { DeepPartial, In, Like, Not, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { Role } from 'src/roles/entities/role.entity';
 import { UserRole } from '../entities/user-role.entity';
@@ -41,13 +41,35 @@ export class UsersRepository {
     return this.repository.softDelete({ uuid });
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<[User[], number]> {
-    const { limit = 10, page = 1, is_active } = paginationDto;
+  async findAll(paginationDto: PaginationDto, excludeRoleCodes: string[] = []): Promise<[User[], number]> {
+    const { limit = 10, page = 1, is_active, search } = paginationDto;
+
+    let excludeUserIds: number[] = [];
+    if (excludeRoleCodes.length > 0) {
+      const userRolesWithExcluded = await this.userRoleRepository.find({
+        where: { role: { code: In(excludeRoleCodes) } },
+        relations: ['role'],
+      });
+      excludeUserIds = userRolesWithExcluded.map((ur) => ur.user_id);
+    }
+
+    const base = {
+      ...(is_active !== undefined && { is_active: is_active === 'true' }),
+      ...(excludeUserIds.length > 0 && { id: Not(In(excludeUserIds)) }),
+    };
+
+    const term = search?.trim();
+    const like = term ? `%${term.replace(/[%_\\]/g, (c) => `\\${c}`)}%` : null;
 
     const [users, total] = await this.repository.findAndCount({
-      where: {
-        ...(is_active !== undefined && { is_active: is_active === 'true' }),
-      },
+      where: like
+        ? [
+            { ...base, name: Like(like) },
+            { ...base, last_name: Like(like) },
+            { ...base, username: Like(like) },
+            { ...base, email: Like(like) },
+          ]
+        : base,
       take: limit,
       skip: (page - 1) * limit,
       relations: ['platforms', 'user_roles', 'user_roles.role'],
