@@ -201,17 +201,22 @@ export class DeliveryDriversService {
     const updateData: Partial<DeliveryDriver> = {
       ...driverData,
       ...(license_expiration
-        ? { license_expiration: new Date(license_expiration) }
+        ? { license_expiration: String(license_expiration).split('T')[0] as any }
         : {}),
     };
-    if (user_uuid === null) {
-      updateData.user_id = null;
-    } else if (user_uuid) {
-      const user = await this.validateUser(user_uuid);
-      if (!user)
-        throw new BadRequestException('El usuario seleccionado no es válido');
-      await this.validateUserDeliveryAssignment(user.id, driverToUpdate.uuid);
-      updateData.user_id = user.id;
+    if (user_uuid !== undefined) {
+      if (!user_uuid) {
+        // Limpiar columna Y relación para evitar que TypeORM re-derive user_id del objeto cargado
+        driverToUpdate.user_id = null;
+        driverToUpdate.user = null;
+      } else {
+        const user = await this.validateUser(user_uuid);
+        if (!user)
+          throw new BadRequestException('El usuario seleccionado no es válido');
+        await this.validateUserDeliveryAssignment(user.id, driverToUpdate.uuid);
+        driverToUpdate.user_id = user.id;
+        driverToUpdate.user = user;
+      }
     }
 
     Object.assign(driverToUpdate, updateData);
