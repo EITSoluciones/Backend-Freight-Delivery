@@ -56,6 +56,12 @@ export class ModulesRepository {
     });
   }
 
+  findAllForCatalog(): Promise<Module[]> {
+    return this.moduleRepository.find({
+      order: { sort_order: 'ASC', name: 'ASC' },
+    });
+  }
+
   findByUuid(uuid: string): Promise<Module | null> {
     return this.moduleRepository.findOne({
       where: { uuid },

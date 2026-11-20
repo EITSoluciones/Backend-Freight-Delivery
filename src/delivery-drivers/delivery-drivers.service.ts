@@ -27,9 +27,9 @@ import { UsersRepository } from 'src/users/repositories/users.repository';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { SendDeliveryDriverInvitationDto } from './dto/send-delivery-driver-invitation.dto';
 import { LicenseValidationService } from 'src/auth/services/license-validation.service';
+import { DELIVERY_DRIVER_ROLE_CODE } from 'src/common/constants/protected-roles.constant';
+import { DELIVERY_DRIVER_INVITATION_CODE } from 'src/common/constants/notification-codes.constant';
 
-const DEFAULT_DELIVERY_ROLE_CODE = 'DELIVERY_DRIVER';
-const DEFAULT_DELIVERY_INVITATION_NOTIFICATION_CODE = 'DELIVERY_DRIVER_INVITATION';
 @Injectable()
 export class DeliveryDriversService {
   constructor(
@@ -136,7 +136,7 @@ export class DeliveryDriversService {
 
   async getUsersForDeliveryDrivers() {
     const users = await this.usersRepository.findByRoleCode(
-      DEFAULT_DELIVERY_ROLE_CODE,
+      DELIVERY_DRIVER_ROLE_CODE,
     );
     return new SuccessResponseDto(
       true,
@@ -169,7 +169,7 @@ export class DeliveryDriversService {
     };
 
     const result = await this.notificationsService.sendNotification(
-      DEFAULT_DELIVERY_INVITATION_NOTIFICATION_CODE,
+      DELIVERY_DRIVER_INVITATION_CODE,
       driver.country_code,
       driver.phone,
       parameters,
@@ -271,7 +271,7 @@ export class DeliveryDriversService {
     const user = await this.usersRepository.findByUuid(uuid);
     const hasDeliveryRole = user?.roles?.some(
       (role) =>
-        role.code === DEFAULT_DELIVERY_ROLE_CODE && role.is_active === true,
+        role.code === DELIVERY_DRIVER_ROLE_CODE && role.is_active === true,
     );
     if (!hasDeliveryRole) {
       throw new BadRequestException(

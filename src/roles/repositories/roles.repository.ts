@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, In, Repository } from 'typeorm';
+import { DeepPartial, In, Like, Not, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { Permission } from '../entities/permission.entity';
 import { Role } from '../entities/role.entity';
+import { UserRole } from 'src/users/entities/user-role.entity';
 
 @Injectable()
 export class RolesRepository {
@@ -12,6 +13,8 @@ export class RolesRepository {
     private readonly roleRepository: Repository<Role>,
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
+    @InjectRepository(UserRole)
+    private readonly userRoleRepository: Repository<UserRole>,
   ) {}
 
   createRole(role: DeepPartial<Role>): Role {
@@ -30,13 +33,24 @@ export class RolesRepository {
     return this.roleRepository.find({ where: { is_active: true } });
   }
 
-  findRoles(paginationDto: PaginationDto): Promise<[Role[], number]> {
-    const { limit = 10, page = 1, is_active } = paginationDto;
+  findRoles(paginationDto: PaginationDto, excludeCodes: string[] = []): Promise<[Role[], number]> {
+    const { limit = 10, page = 1, is_active, search } = paginationDto;
+
+    const base = {
+      ...(is_active !== undefined && { is_active: is_active === 'true' }),
+      ...(excludeCodes.length > 0 && { code: Not(In(excludeCodes)) }),
+    };
+
+    const term = search?.trim();
+    const like = term ? `%${term.replace(/[%_\\]/g, (c) => `\\${c}`)}%` : null;
 
     return this.roleRepository.findAndCount({
-      where: {
-        ...(is_active !== undefined && { is_active: is_active === 'true' }),
-      },
+      where: like
+        ? [
+            { ...base, name: Like(like) },
+            { ...base, code: Like(like) },
+          ]
+        : base,
       take: limit,
       skip: (page - 1) * limit,
     });
@@ -66,15 +80,26 @@ export class RolesRepository {
 
   findActivePermissions(): Promise<Permission[]> {
     return this.permissionRepository.find({
-      where: { is_active: true },
+      where: { is_active: true, module: { is_active: true } },
       relations: ['module'],
     });
   }
 
   findActivePermissionsByUuids(uuids: string[]): Promise<Permission[]> {
-    return this.permissionRepository.findBy({
-      uuid: In(uuids),
-      is_active: true,
+    return this.permissionRepository.find({
+      where: {
+        uuid: In(uuids),
+        is_active: true,
+        module: { is_active: true },
+      },
+      relations: ['module'],
     });
+  }
+
+  async hasUsersAssigned(roleId: number): Promise<boolean> {
+    const count = await this.userRoleRepository.count({
+      where: { role_id: roleId },
+    });
+    return count > 0;
   }
 }

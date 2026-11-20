@@ -39,23 +39,36 @@ export class UserRoleGuard implements CanActivate {
     //Usuario no encontrado en la request
     if (!user) throw new BadRequestException('Usuario no encontrado!');
 
-    //Obtiene Pemisos definidos en el Rol
+    //Obtiene Permisos definidos en el Rol, excluyendo los de módulos inactivos
     const userPermissionCodes = user.roles.flatMap((role) =>
-      (role.permissions ?? []).map((p) => p.code),
+      (role.permissions ?? [])
+        .filter((p) => p.module?.is_active !== false)
+        .map((p) => p.code),
     );
-
-    // console.log('UserRoleGuard - validPermissions:', validPermissions);
-    // console.log('UserRoleGuard - userPermissionCodes:', userPermissionCodes);
 
     //Validar Permiso del Rol
     const hasValidRole = validPermissions.some((code) =>
       userPermissionCodes.includes(code),
     );
 
-    if (!hasValidRole)
+    if (!hasValidRole) {
+      // Verificar si tiene el permiso pero el módulo está inactivo
+      const allPermissionCodes = user.roles.flatMap((role) =>
+        (role.permissions ?? []).map((p) => p.code),
+      );
+      const hasPermissionButModuleInactive = validPermissions.some((code) =>
+        allPermissionCodes.includes(code),
+      );
+
+      if (hasPermissionButModuleInactive)
+        throw new ForbiddenException(
+          'Este módulo está inactivo y no se puede acceder a él.',
+        );
+
       throw new ForbiddenException(
         `El usuario no cuenta con los permisos [${validPermissions}] necesarios para acceder a este recurso`,
       );
+    }
 
     return true;
   }

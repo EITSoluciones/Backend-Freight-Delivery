@@ -45,8 +45,8 @@ export class UsersController {
 
   @Get()
   @Auth(Permissions.UsersView)
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.usersService.findAll(paginationDto);
+  findAll(@Query() paginationDto: PaginationDto, @GetUser() currentUser: User) {
+    return this.usersService.findAll(paginationDto, currentUser);
   }
 
   @Get('catalog')

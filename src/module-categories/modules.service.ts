@@ -22,7 +22,7 @@ export class ModulesService {
   ) {}
 
   async getModulesCatalog(): Promise<SuccessResponseDto<Module[]>> {
-    const modules = await this.modulesRepository.findActive();
+    const modules = await this.modulesRepository.findAllForCatalog();
     return new SuccessResponseDto(
       true,
       'Módulos obtenidos exitosamente!',
@@ -85,7 +85,7 @@ export class ModulesService {
     );
 
     await this.logsService.log(currentUser || null, {
-      module: LogModule.MODULES,
+      module: LogModule.MODULE_CATEGORIES,
       action: LogAction.UPDATE,
       description: `Orden de módulos actualizado en categoría: ${category.name}`,
       newData: { module_category_uuid, ordered_uuids },
@@ -125,7 +125,7 @@ export class ModulesService {
     const updatedModule = await this.modulesRepository.save(moduleToUpdate);
 
     await this.logsService.log(currentUser || null, {
-      module: LogModule.MODULES,
+      module: LogModule.MODULE_CATEGORIES,
       action: LogAction.UPDATE,
       description: `Módulo actualizado: ${updatedModule.name}. UUID: ${updatedModule.uuid}`,
       oldData,

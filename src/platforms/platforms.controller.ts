@@ -18,7 +18,7 @@ export class PlatformsController {
   constructor(private readonly platformsService: PlatformsService) {}
 
   @Get()
-  @Auth(Permissions.PlatformsView)
+  @Auth()
   findAll() {
     return this.platformsService.findAll();
   }

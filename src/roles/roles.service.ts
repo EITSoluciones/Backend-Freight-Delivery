@@ -19,6 +19,7 @@ import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogAction } from 'src/logs/enums/log-action.enum';
 import { User } from 'src/users/entities/user.entity';
 import { RolesRepository } from './repositories/roles.repository';
+import { PROTECTED_ROLE_CODES, SUPER_ADMIN_ROLE_CODE } from 'src/common/constants/protected-roles.constant';
 
 @Injectable()
 export class RolesService {
@@ -29,9 +30,11 @@ export class RolesService {
   ) {}
 
   /** Obtener Catálogo de Roles */
-  async getRolesCatalog(): Promise<SuccessResponseDto<Role[]>> {
+  async getRolesCatalog(currentUser: User): Promise<SuccessResponseDto<Role[]>> {
     const roles = await this.rolesRepository.findActiveRoles();
-    return new SuccessResponseDto(true, 'Roles obtenidos exitosamente!', roles);
+    const isSuperAdmin = currentUser.roles.some(r => r.code === SUPER_ADMIN_ROLE_CODE);
+    const data = isSuperAdmin ? roles : roles.filter(r => r.code !== SUPER_ADMIN_ROLE_CODE);
+    return new SuccessResponseDto(true, 'Roles obtenidos exitosamente!', data);
   }
 
   /** Obtener Catálogo de Permisos */
@@ -74,10 +77,13 @@ export class RolesService {
   /** Obtener Roles */
   async findAll(
     paginationDto: PaginationDto,
+    currentUser: User,
   ): Promise<PaginatedResponse<Role>> {
-    const { limit = 10, page = 1, is_active } = paginationDto;
+    const { limit = 10, page = 1 } = paginationDto;
+    const isSuperAdmin = currentUser.roles.some(r => r.code === SUPER_ADMIN_ROLE_CODE);
+    const excludeCodes = isSuperAdmin ? [] : [SUPER_ADMIN_ROLE_CODE];
 
-    const [Roles, total] = await this.rolesRepository.findRoles(paginationDto);
+    const [Roles, total] = await this.rolesRepository.findRoles(paginationDto, excludeCodes);
 
     return PaginatedResponse.create(
       Roles,
@@ -109,6 +115,19 @@ export class RolesService {
 
     if (!roleToUpdate)
       throw new NotFoundException(`Rol con uuid: ${uuid} no encontrada`);
+
+    if (updateRoleDto.is_active === false) {
+      if (PROTECTED_ROLE_CODES.includes(roleToUpdate.code))
+        throw new BadRequestException(
+          'Este rol es un rol del sistema y no puede ser desactivado.',
+        );
+
+      const hasUsers = await this.rolesRepository.hasUsersAssigned(roleToUpdate.id);
+      if (hasUsers)
+        throw new BadRequestException(
+          'No es posible desactivar un rol con usuarios asignados.',
+        );
+    }
 
     try {
       const oldData = { ...roleToUpdate };
@@ -142,6 +161,17 @@ export class RolesService {
 
     if (!role)
       throw new NotFoundException(`El Rol con uuid ${uuid} no se encontró!`);
+
+    if (PROTECTED_ROLE_CODES.includes(role.code))
+      throw new BadRequestException(
+        'Este rol es un rol del sistema y no puede ser eliminado.',
+      );
+
+    const hasUsers = await this.rolesRepository.hasUsersAssigned(role.id);
+    if (hasUsers)
+      throw new BadRequestException(
+        'No es posible eliminar un rol con usuarios asignados.',
+      );
 
     await this.rolesRepository.softDeleteRoleByUuid(uuid);
 
