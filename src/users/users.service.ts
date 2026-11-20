@@ -123,9 +123,8 @@ export class UsersService {
   ): Promise<SuccessResponseDto<User>> {
     const { password, platforms, roles, ...userDataToUpdate } = updateUserDto;
 
-    const userToUpdate = await this.findUserByUuid(uuid);
-
     try {
+      const userToUpdate = await this.findUserByUuid(uuid);
       const oldData = { ...userToUpdate };
 
       Object.assign(userToUpdate, userDataToUpdate);
@@ -139,12 +138,12 @@ export class UsersService {
         userToUpdate.platforms = platformsEntities;
       }
 
+      const updatedUser = await this.usersRepository.save(userToUpdate);
+
       if (roles) {
         const rolesEntities = await this.findRolesByCode(roles);
-        await this.usersRepository.assignRoles(userToUpdate, rolesEntities);
+        await this.usersRepository.assignRoles(updatedUser, rolesEntities);
       }
-
-      const updatedUser = await this.usersRepository.save(userToUpdate);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.USERS,
