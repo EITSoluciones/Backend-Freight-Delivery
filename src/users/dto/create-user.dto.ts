@@ -13,6 +13,9 @@ import {
 export class CreateUserDto {
   @IsNotEmpty({ message: 'Username es obligatorio.' })
   @IsString()
+  @Matches(/^[a-zA-Z0-9_]+$/, {
+    message: 'El username solo puede contener letras, números y guion bajo (_). No se permiten espacios.',
+  })
   username!: string;
 
   @IsNotEmpty({ message: 'Email es obligatorio' })
