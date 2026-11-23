@@ -169,6 +169,15 @@ export class UsersRepository {
     return this.repository.find();
   }
 
+  findForUniquenessCheck(email?: string, username?: string): Promise<User[]> {
+    const where: { email?: string; username?: string }[] = [];
+    if (email) where.push({ email });
+    if (username) where.push({ username });
+    if (!where.length) return Promise.resolve([]);
+
+    return this.repository.find({ where, withDeleted: true });
+  }
+
   private withRoles<T extends User | null>(user: T): T {
     if (user) {
       user.roles = user.user_roles?.map((userRole) => userRole.role) ?? [];

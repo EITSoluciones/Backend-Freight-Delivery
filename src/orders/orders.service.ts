@@ -11,6 +11,9 @@ import {
 } from 'src/common/dto/success-response.dto';
 import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { validateImportRow } from 'src/common/import/import-field-validator';
+import { ColumnMetadata } from 'src/common/interfaces/column-metadata.interface';
+import { ImportRowError } from 'src/common/interfaces/import-row-error.interface';
 import { Customer } from 'src/customers/entities/customer.entity';
 import { CustomersRepository } from 'src/customers/repositories/customers.repository';
 import { LogAction } from 'src/logs/enums/log-action.enum';
@@ -25,6 +28,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderPriority } from './enums/order-priority.enum';
 import { Order } from './entities/order.entity';
 import { OrdersRepository } from './repositories/orders.repository';
+import { ORDERS_IMPORT_METADATA } from './constants/orders-import-metadata';
 
 @Injectable()
 export class OrdersService {
@@ -97,72 +101,92 @@ export class OrdersService {
   ): Promise<SuccessResponseDto<Order[]>> {
     const ordersToImport = importOrdersDto.orders.map((order) => ({
       ...order,
-      order_number: order.order_number.trim(),
-      customer_code: order.customer_code.trim().toUpperCase(),
-      origin_center_code: order.origin_center_code.trim().toUpperCase(),
+      order_number: order.order_number?.toString().trim() ?? '',
+      customer_code: order.customer_code?.toString().trim().toUpperCase() ?? '',
+      origin_center_code: order.origin_center_code?.toString().trim().toUpperCase() ?? '',
     }));
-    const orderNumbers = ordersToImport.map((order) => order.order_number);
-    const duplicatedOrderNumbers = orderNumbers.filter(
-      (orderNumber, index) => orderNumbers.indexOf(orderNumber) !== index,
-    );
 
-    if (duplicatedOrderNumbers.length) {
-      throw new BadRequestException(
-        `Hay números de pedido duplicados en la carga: ${[...new Set(duplicatedOrderNumbers)].join(', ')}.`,
-      );
-    }
+    const errors: ImportRowError[] = [];
+    const orderNumbersInFile = new Map<string, number>();
+
+    ordersToImport.forEach((order, index) => {
+      const row = index + 2;
+
+      validateImportRow(order as Record<string, unknown>, row, ORDERS_IMPORT_METADATA, errors);
+
+      // Duplicate order_number within the file
+      if (order.order_number && order.order_number.length <= 100) {
+        const firstRow = orderNumbersInFile.get(order.order_number);
+        if (firstRow !== undefined) {
+          errors.push({ row, field: 'order_number', value: order.order_number, observation: `El número "${order.order_number}" ya aparece en la fila ${firstRow}` });
+        } else {
+          orderNumbersInFile.set(order.order_number, row);
+        }
+      }
+
+      // Cross-field: delivery window start must be before end
+      if (order.delivery_window_start && order.delivery_window_end) {
+        const start = new Date(String(order.delivery_window_start));
+        const end = new Date(String(order.delivery_window_end));
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start >= end) {
+          errors.push({ row, field: 'delivery_window_start', observation: 'La hora de inicio de la ventana de entrega debe ser anterior a la hora de fin' });
+        }
+      }
+    });
+
+    const uniqueOrderNumbers = [...orderNumbersInFile.keys()];
+    const uniqueCustomerCodes = [
+      ...new Set(ordersToImport.filter((o) => o.customer_code).map((o) => o.customer_code)),
+    ];
+    const uniqueCenterCodes = [
+      ...new Set(ordersToImport.filter((o) => o.origin_center_code).map((o) => o.origin_center_code)),
+    ];
 
     const [existingOrders, customers, centers] = await Promise.all([
-      this.ordersRepository.findByOrderNumbers(orderNumbers),
-      this.customersRepository.findByCodes(
-        [...new Set(ordersToImport.map((order) => order.customer_code))],
-      ),
-      this.centersRepository.findByCodes(
-        [...new Set(ordersToImport.map((order) => order.origin_center_code))],
-      ),
+      uniqueOrderNumbers.length
+        ? this.ordersRepository.findByOrderNumbers(uniqueOrderNumbers)
+        : Promise.resolve([]),
+      uniqueCustomerCodes.length
+        ? this.customersRepository.findByCodes(uniqueCustomerCodes)
+        : Promise.resolve([]),
+      uniqueCenterCodes.length
+        ? this.centersRepository.findByCodes(uniqueCenterCodes)
+        : Promise.resolve([]),
     ]);
 
-    if (existingOrders.length) {
-      throw new BadRequestException(
-        `Ya existen pedidos con los números: ${existingOrders.map((order) => order.order_number).join(', ')}.`,
-      );
+    const existingOrderNumbersSet = new Set(existingOrders.map((o) => o.order_number));
+    const customersByCode = new Map(customers.map((c) => [c.code, c]));
+    const centersByCode = new Map(centers.map((c) => [c.code, c]));
+
+    ordersToImport.forEach((order, index) => {
+      const row = index + 2;
+
+      // Solo reportar error de DB en la primera ocurrencia del número en el archivo
+      if (order.order_number && orderNumbersInFile.get(order.order_number) === row && existingOrderNumbersSet.has(order.order_number)) {
+        errors.push({ row, field: 'order_number', value: order.order_number, observation: `Ya existe un pedido con el número "${order.order_number}"` });
+      }
+
+      if (order.customer_code && !customersByCode.has(order.customer_code)) {
+        errors.push({ row, field: 'customer_code', value: order.customer_code, observation: `No se encontró ningún cliente con el código "${order.customer_code}"` });
+      }
+
+      if (order.origin_center_code && !centersByCode.has(order.origin_center_code)) {
+        errors.push({ row, field: 'origin_center_code', value: order.origin_center_code, observation: `No se encontró ningún centro con el código "${order.origin_center_code}"` });
+      }
+    });
+
+    if (errors.length) {
+      throw new BadRequestException({
+        message: `Se encontraron ${errors.length} error${errors.length !== 1 ? 'es' : ''} en la carga. No se insertó ningún registro.`,
+        errors: errors.sort((a, b) => a.row - b.row),
+      });
     }
 
-    const customersByCode = new Map(
-      customers.map((customer) => [customer.code, customer]),
-    );
-    const centersByCode = new Map(
-      centers.map((center) => [center.code, center]),
-    );
-    const ordersToCreate = ordersToImport.map(
-      ({ customer_code, origin_center_code, ...orderData }) => {
-        const customer = customersByCode.get(customer_code);
-        const originCenter = centersByCode.get(origin_center_code);
-
-        if (!customer) {
-          throw new NotFoundException(
-            `Cliente con código ${customer_code} no encontrado!`,
-          );
-        }
-
-        if (!originCenter) {
-          throw new NotFoundException(
-            `Centro con código ${origin_center_code} no encontrado!`,
-          );
-        }
-
-        this.validateDeliveryWindow(
-          orderData.delivery_window_start,
-          orderData.delivery_window_end,
-        );
-
-        return {
-          ...orderData,
-          customer_id: customer.id,
-          origin_center_id: originCenter.id,
-        };
-      },
-    );
+    const ordersToCreate = ordersToImport.map(({ customer_code, origin_center_code, ...orderData }) => ({
+      ...orderData,
+      customer_id: customersByCode.get(customer_code)!.id,
+      origin_center_id: origin_center_code ? centersByCode.get(origin_center_code)!.id : null,
+    }));
 
     try {
       const savedOrders = await this.ordersRepository.createMany(ordersToCreate);
@@ -171,24 +195,21 @@ export class OrdersService {
         module: LogModule.ORDERS,
         action: LogAction.CREATE,
         description: `Carga masiva de pedidos: ${savedOrders.length} registros creados.`,
-        newData: { count: savedOrders.length, order_numbers: orderNumbers },
+        newData: { count: savedOrders.length, order_numbers: uniqueOrderNumbers },
       });
 
-      return new SuccessResponseDto(
-        true,
-        'Pedidos cargados exitosamente!',
-        savedOrders,
-      );
+      return new SuccessResponseDto(true, 'Pedidos cargados exitosamente!', savedOrders);
     } catch (error) {
       this.dbErrorHandler.handleDBErrors(error);
     }
   }
 
-  getImportTemplate(): SuccessResponseDto<{ orders: CreateImportOrderDto[] }> {
+  getImportTemplate(): SuccessResponseDto<{ orders: CreateImportOrderDto[]; metadata: ColumnMetadata[] }> {
     return new SuccessResponseDto(
       true,
       'Plantilla de pedidos obtenida exitosamente!',
       {
+        metadata: ORDERS_IMPORT_METADATA,
         orders: [
           {
             order_number: 'PED-000001',

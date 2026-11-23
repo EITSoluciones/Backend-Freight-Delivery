@@ -5,6 +5,9 @@ import {
 } from 'src/common/dto/success-response.dto';
 import { DBErrorHandlerService } from 'src/common/database/db-error-handler.service';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { validateImportRow } from 'src/common/import/import-field-validator';
+import { ColumnMetadata } from 'src/common/interfaces/column-metadata.interface';
+import { ImportRowError } from 'src/common/interfaces/import-row-error.interface';
 import { LogAction } from 'src/logs/enums/log-action.enum';
 import { LogModule } from 'src/logs/enums/log-module.enum';
 import { LogsService } from 'src/logs/logs.service';
@@ -14,6 +17,7 @@ import { ImportCentersDto } from './dto/import-centers.dto';
 import { UpdateCenterDto } from './dto/update-center.dto';
 import { Center } from './entities/center.entity';
 import { CentersRepository } from './repositories/centers.repository';
+import { CENTERS_IMPORT_METADATA } from './constants/centers-import-metadata';
 
 @Injectable()
 export class CentersService {
@@ -80,54 +84,79 @@ export class CentersService {
     importCentersDto: ImportCentersDto,
     currentUser?: User,
   ): Promise<SuccessResponseDto<Center[]>> {
-    const centersToCreate = importCentersDto.centers.map((center) => ({
+    const centersToImport = importCentersDto.centers.map((center) => ({
       ...center,
-      code: center.code.trim().toUpperCase(),
+      code: center.code?.toString().trim().toUpperCase() ?? '',
     }));
-    const codes = centersToCreate.map((center) => center.code);
-    const duplicatedCodes = codes.filter(
-      (code, index) => codes.indexOf(code) !== index,
-    );
 
-    if (duplicatedCodes.length) {
-      throw new BadRequestException(
-        `Hay códigos de centro duplicados en la carga: ${[...new Set(duplicatedCodes)].join(', ')}.`,
-      );
+    const errors: ImportRowError[] = [];
+    const codesInFile = new Map<string, number>();
+
+    centersToImport.forEach((center, index) => {
+      const row = index + 2;
+
+      validateImportRow(center as Record<string, unknown>, row, CENTERS_IMPORT_METADATA, errors);
+
+      // Duplicate code within the file
+      if (center.code && center.code.length <= 10) {
+        const firstRow = codesInFile.get(center.code);
+        if (firstRow !== undefined) {
+          errors.push({ row, field: 'code', value: center.code, observation: `El código "${center.code}" ya aparece en la fila ${firstRow}` });
+        } else {
+          codesInFile.set(center.code, row);
+        }
+      }
+    });
+
+    const uniqueCodes = [...codesInFile.keys()];
+    if (uniqueCodes.length) {
+      const existingCenters = await this.centersRepository.findByCodes(uniqueCodes);
+      if (existingCenters.length) {
+        const existingCodesSet = new Set(existingCenters.map((c) => c.code));
+        centersToImport.forEach((center, index) => {
+          const row = index + 2;
+          // Solo reportar error de DB en la primera ocurrencia del código en el archivo
+          if (center.code && codesInFile.get(center.code) === row && existingCodesSet.has(center.code)) {
+            errors.push({
+              row,
+              field: 'code',
+              value: center.code,
+              observation: `Ya existe un centro con el código "${center.code}"`,
+            });
+          }
+        });
+      }
     }
 
-    const existingCenters = await this.centersRepository.findByCodes(codes);
-
-    if (existingCenters.length) {
-      throw new BadRequestException(
-        `Ya existen centros con los códigos: ${existingCenters.map((center) => center.code).join(', ')}.`,
-      );
+    if (errors.length) {
+      throw new BadRequestException({
+        message: `Se encontraron ${errors.length} error${errors.length !== 1 ? 'es' : ''} en la carga. No se insertó ningún registro.`,
+        errors: errors.sort((a, b) => a.row - b.row),
+      });
     }
 
     try {
-      const savedCenters = await this.centersRepository.createMany(centersToCreate);
+      const savedCenters = await this.centersRepository.createMany(centersToImport);
 
       await this.logsService.log(currentUser || null, {
         module: LogModule.CENTERS,
         action: LogAction.CREATE,
         description: `Carga masiva de centros: ${savedCenters.length} registros creados.`,
-        newData: { count: savedCenters.length, codes },
+        newData: { count: savedCenters.length, codes: uniqueCodes },
       });
 
-      return new SuccessResponseDto(
-        true,
-        'Centros cargados exitosamente!',
-        savedCenters,
-      );
+      return new SuccessResponseDto(true, 'Centros cargados exitosamente!', savedCenters);
     } catch (error) {
       this.dbErrorHandler.handleDBErrors(error);
     }
   }
 
-  getImportTemplate(): SuccessResponseDto<{ centers: CreateCenterDto[] }> {
+  getImportTemplate(): SuccessResponseDto<{ centers: CreateCenterDto[]; metadata: ColumnMetadata[] }> {
     return new SuccessResponseDto(
       true,
       'Plantilla de centros obtenida exitosamente!',
       {
+        metadata: CENTERS_IMPORT_METADATA,
         centers: [
           {
             code: 'CEDIS-001',

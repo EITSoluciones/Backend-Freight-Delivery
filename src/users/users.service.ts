@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Platform } from 'src/platforms/entities/platform.entity';
 import { Role } from 'src/roles/entities/role.entity';
 import { User } from './entities/user.entity';
@@ -36,6 +36,14 @@ export class UsersService {
   ): Promise<SuccessResponseDto<User>> {
     try {
       const { password, platforms, roles, ...userData } = createUserDto;
+
+      const existing = await this.usersRepository.findForUniquenessCheck(userData.email, userData.username);
+      if (existing.length > 0) {
+        if (existing.some(u => u.email === userData.email.toLowerCase().trim()))
+          throw new ConflictException('El correo electrónico ya está registrado.');
+        if (existing.some(u => u.username === userData.username.toLowerCase().trim()))
+          throw new ConflictException('El nombre de usuario ya está en uso.');
+      }
 
       const platformsIds = await this.findPlatformsByCode(platforms);
       const rolesIds = await this.findRolesByCode(roles);
@@ -125,6 +133,23 @@ export class UsersService {
 
     try {
       const userToUpdate = await this.findUserByUuid(uuid);
+
+      if (userDataToUpdate.email || userDataToUpdate.username) {
+        const existing = await this.usersRepository.findForUniquenessCheck(
+          userDataToUpdate.email,
+          userDataToUpdate.username,
+        );
+        const conflict = existing.filter(u => u.uuid !== uuid);
+        if (conflict.length > 0) {
+          const normalizedEmail = userDataToUpdate.email?.toLowerCase().trim();
+          const normalizedUsername = userDataToUpdate.username?.toLowerCase().trim();
+          if (normalizedEmail && conflict.some(u => u.email === normalizedEmail))
+            throw new ConflictException('El correo electrónico ya está registrado.');
+          if (normalizedUsername && conflict.some(u => u.username === normalizedUsername))
+            throw new ConflictException('El nombre de usuario ya está en uso.');
+        }
+      }
+
       const oldData = { ...userToUpdate };
 
       Object.assign(userToUpdate, userDataToUpdate);
